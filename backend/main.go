@@ -40,13 +40,6 @@ func main() {
 
 	//endpoints
 	r.GET("/health", healthCheck)
-	// r.GET("/cate/:cate_id", getItemBycate)
-	// r.GET("/shop/:shop_id", getShopDes)
-	// r.GET("/allshop", allShop)
-	// r.GET("/item/:product_id", getProductInfo)
-	// r.GET("/itembyshop/:shop_id", getProductByShop)
-	// r.GET("/shopinfo/:item_id", getShopInfoByItem)
-	// r.GET("/readom", getRandomProduct)
 
 	// เริ่มการทำงานของ API
 	port := viper.GetString("PORT")
