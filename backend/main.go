@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fire_detection_web_app/internal/auth"
+
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -37,6 +40,39 @@ func main() {
 
 	r := gin.Default()
 	r.Use(cors.Default())
+
+	dbConn, err := DB.DB()
+	if err != nil {
+		log.Fatalf("Failed to get database connection: %v", err)
+	}
+
+	repo := auth.NewRepository(dbConn)
+
+	jwtService := auth.NewJWT(os.Getenv("JWT_SECRET"))
+
+	service := auth.NewService(repo, jwtService)
+
+	handler := auth.NewHandler(service)
+
+	authGroup := r.Group("/auth")
+	{
+		authGroup.POST("/register", handler.Register)
+		authGroup.POST("/login", handler.Login)
+	}
+
+	api := r.Group("/api")
+
+	api.Use(auth.AuthMiddleware(os.Getenv("JWT_SECRET")))
+
+	api.GET("/me", func(c *gin.Context) {
+
+		userID := c.GetString("user_id")
+
+		c.JSON(200, gin.H{
+			"user_id": userID,
+		})
+
+	})
 
 	//endpoints
 	r.GET("/health", healthCheck)
