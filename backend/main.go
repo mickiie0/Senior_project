@@ -5,7 +5,6 @@ import (
 
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -48,7 +47,7 @@ func main() {
 
 	repo := auth.NewRepository(dbConn)
 
-	jwtService := auth.NewJWT(os.Getenv("JWT_SECRET"))
+	jwtService := auth.NewJWT(viper.GetString("JWT_SECRET"))
 
 	service := auth.NewService(repo, jwtService)
 
@@ -61,18 +60,20 @@ func main() {
 	}
 
 	api := r.Group("/api")
+	api.Use(auth.AuthMiddleware(jwtService.Secret))
 
-	api.Use(auth.AuthMiddleware(os.Getenv("JWT_SECRET")))
+	{
+		api.GET("/me", func(c *gin.Context) {
 
-	api.GET("/me", func(c *gin.Context) {
+			userID := c.GetString("user_id")
+			role := c.GetString("role")
 
-		userID := c.GetString("user_id")
-
-		c.JSON(200, gin.H{
-			"user_id": userID,
+			c.JSON(200, gin.H{
+				"user_id": userID,
+				"role":    role,
+			})
 		})
-
-	})
+	}
 
 	//endpoints
 	r.GET("/health", healthCheck)
