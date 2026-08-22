@@ -44,7 +44,7 @@ services:
       DB_NAME: fire_detection
 
   frontend:
-    build: ./frontend/frontend
+    build: ./frontend
 
     ports:
       - "3000:3000"

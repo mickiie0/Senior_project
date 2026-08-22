@@ -3,7 +3,7 @@ package auth
 import "time"
 
 type User struct {
-	ID           string    `db:"id"`
+	ID           string    `db:"user_id"`
 	Username     string    `db:"username"`
 	Email        string    `db:"email"`
 	PasswordHash string    `db:"password_hash"`

@@ -16,7 +16,7 @@ func (r *Repository) FindByEmail(email string) (*User, error) {
 	var user User
 
 	query := `
-	SELECT id, username, email, password_hash, role
+	SELECT user_id, username, email, password_hash, role
 	FROM users
 	WHERE email=$1
 	`
