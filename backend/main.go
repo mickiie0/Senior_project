@@ -5,7 +5,7 @@ import (
 
 	"log"
 	"net/http"
-	"os"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -15,17 +15,22 @@ import (
 )
 
 func init() {
-	// การตั้งค่า viper สำหรับอ่าน config
+	// การตั้งค่า viper สำหรับอ่าน config จาก .env
 	viper.SetConfigFile(".env")
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Error reading config file, %s", err)
+		log.Printf("Warning: Error reading config file (.env), falling back to system environment: %s", err)
 	}
+	viper.AutomaticEnv() // รองรับการอ่าน Environment Variable โดยตรงด้วย
 }
 
 var DB *gorm.DB
 
 func ConnectDB() {
 	dsn := viper.GetString("DATABASE_URL") // ดึง connection string จาก config
+	if dsn == "" {
+		log.Fatalf("DATABASE_URL is not set")
+	}
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
@@ -36,45 +41,56 @@ func ConnectDB() {
 
 func main() {
 	ConnectDB()
-	// DB.AutoMigrate(&models.User{}) // สร้างตารางในฐานข้อมูลถ้ายังไม่มี
+
+	// อ่านค่า JWT_SECRET ผ่าน viper แทน os.Getenv
+	jwtSecret := viper.GetString("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatalf("JWT_SECRET is not set in environment or .env file")
+	}
 
 	r := gin.Default()
-	r.Use(cors.Default())
+
+	// ตั้งค่า CORS ให้รองรับ Authorization Header จาก React
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
+	r.Use(cors.New(config))
 
 	dbConn, err := DB.DB()
 	if err != nil {
 		log.Fatalf("Failed to get database connection: %v", err)
 	}
 
+	// Initializing Services
 	repo := auth.NewRepository(dbConn)
-
-	jwtService := auth.NewJWT(os.Getenv("JWT_SECRET"))
-
+	jwtService := auth.NewJWT(jwtSecret, 24*time.Hour) // ส่งทั้ง Secret และ Expiration Time
 	service := auth.NewService(repo, jwtService)
-
 	handler := auth.NewHandler(service)
 
+	// Public Endpoints
 	authGroup := r.Group("/auth")
 	{
 		authGroup.POST("/register", handler.Register)
 		authGroup.POST("/login", handler.Login)
 	}
 
+	// Protected Endpoints
 	api := r.Group("/api")
+	api.Use(auth.AuthMiddleware(jwtSecret))
+	{
+		api.GET("/me", func(c *gin.Context) {
+			// แก้ไข Key ให้ตรงกับ c.Set("user_id") ใน middleware.go
+			userID, _ := c.Get("user_id")
+			role, _ := c.Get("role")
 
-	api.Use(auth.AuthMiddleware(os.Getenv("JWT_SECRET")))
-
-	api.GET("/me", func(c *gin.Context) {
-
-		userID := c.GetString("user_id")
-
-		c.JSON(200, gin.H{
-			"user_id": userID,
+			c.JSON(http.StatusOK, gin.H{
+				"user_id": userID,
+				"role":    role,
+			})
 		})
+	}
 
-	})
-
-	//endpoints
+	// Health check endpoint
 	r.GET("/health", healthCheck)
 
 	// เริ่มการทำงานของ API
@@ -82,6 +98,7 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+
 	log.Printf("Starting server on port %s...", port)
 	if err := r.Run(":" + port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)

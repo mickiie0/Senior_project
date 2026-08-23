@@ -11,12 +11,12 @@ func NewRepository(db *sql.DB) *Repository {
 		DB: db,
 	}
 }
-func (r *Repository) FindByEmail(email string) (*User, error) {
 
+func (r *Repository) FindByEmail(email string) (*User, error) {
 	var user User
 
 	query := `
-	SELECT id, username, email, password_hash, role
+	SELECT id, username, email, password_hash, role, created_at
 	FROM users
 	WHERE email=$1
 	`
@@ -27,6 +27,7 @@ func (r *Repository) FindByEmail(email string) (*User, error) {
 		&user.Email,
 		&user.PasswordHash,
 		&user.Role,
+		&user.CreatedAt,
 	)
 
 	if err != nil {
@@ -35,20 +36,19 @@ func (r *Repository) FindByEmail(email string) (*User, error) {
 
 	return &user, nil
 }
-func (r *Repository) Create(user *User) error {
 
+func (r *Repository) Create(user *User) error {
 	query := `
-	INSERT INTO users(username,email,password_hash,role)
-	VALUES($1,$2,$3,$4)
+	INSERT INTO users (username, email, password_hash, role)
+	VALUES ($1, $2, $3, $4)
+	RETURNING id, created_at
 	`
 
-	_, err := r.DB.Exec(
+	return r.DB.QueryRow(
 		query,
 		user.Username,
 		user.Email,
 		user.PasswordHash,
 		user.Role,
-	)
-
-	return err
+	).Scan(&user.ID, &user.CreatedAt)
 }

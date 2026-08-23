@@ -7,13 +7,17 @@ import (
 )
 
 type JWTService struct {
-	Secret string
+	Secret     string
+	ExpireTime time.Duration
 }
 
-func NewJWT(secret string) *JWTService {
-
+func NewJWT(secret string, expireTime time.Duration) *JWTService {
+	if expireTime == 0 {
+		expireTime = 24 * time.Hour // Default 24 hours
+	}
 	return &JWTService{
-		Secret: secret,
+		Secret:     secret,
+		ExpireTime: expireTime,
 	}
 }
 
@@ -26,16 +30,14 @@ type Claims struct {
 }
 
 func (j *JWTService) GenerateToken(user *User) (string, error) {
-
 	claims := Claims{
 		UserID: user.ID,
 		Email:  user.Email,
 		Role:   user.Role,
 
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(
-				time.Now().Add(24 * time.Hour),
-			),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.ExpireTime)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 
