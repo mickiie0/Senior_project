@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 
-const Dashboard = () => {
+const Statistics = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
@@ -31,15 +31,16 @@ const Dashboard = () => {
 
   return (
     <MainLayout 
-      title="Dashboard" 
+      title="Statistics" 
       username={user?.username || 'User'} 
       userRole={user?.role || 'user'}
     >
       <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-        <h3>พื้นที่เตรียมใส่เนื้อหา Dashboard</h3>
+        <h3 style={{ margin: '0 0 16px 0', color: '#0f172a' }}>สถิติการแจ้งเตือน (Statistics)</h3>
+        <p style={{ color: '#64748b', fontSize: '14px' }}>พื้นที่สำหรับแสดงกราฟและข้อมูลทางสถิติการตรวจจับ</p>
       </div>
     </MainLayout>
   );
 };
 
-export default Dashboard;
+export default Statistics;

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 
-const Dashboard = () => {
+const CameraManagement = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
@@ -19,6 +19,13 @@ const Dashboard = () => {
         const response = await axios.get('http://localhost:8080/api/me', {
           headers: { Authorization: `Bearer ${token}` },
         });
+
+        // ป้องกันกรณี User พิมพ์ URL เข้ามาเองโดยตรง
+        if (response.data.role?.toLowerCase() !== 'admin') {
+          navigate('/dashboard');
+          return;
+        }
+
         setUser(response.data);
       } catch (err) {
         localStorage.removeItem('token');
@@ -31,15 +38,16 @@ const Dashboard = () => {
 
   return (
     <MainLayout 
-      title="Dashboard" 
+      title="Camera Management" 
       username={user?.username || 'User'} 
-      userRole={user?.role || 'user'}
+      userRole={user?.role || 'admin'}
     >
       <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-        <h3>พื้นที่เตรียมใส่เนื้อหา Dashboard</h3>
+        <h3 style={{ margin: '0 0 16px 0', color: '#0f172a' }}>จัดการกล้องวงจรปิด (Camera Management)</h3>
+        <p style={{ color: '#64748b', fontSize: '14px' }}>พื้นที่สำหรับเพิ่ม ลบ หรือตั้งค่ากล้องวงจรปิด (เฉพาะ Admin เท่านั้น)</p>
       </div>
     </MainLayout>
   );
 };
 
-export default Dashboard;
+export default CameraManagement;

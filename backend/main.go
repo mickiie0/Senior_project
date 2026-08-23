@@ -15,18 +15,17 @@ import (
 )
 
 func init() {
-	// การตั้งค่า viper สำหรับอ่าน config จาก .env
 	viper.SetConfigFile(".env")
 	if err := viper.ReadInConfig(); err != nil {
 		log.Printf("Warning: Error reading config file (.env), falling back to system environment: %s", err)
 	}
-	viper.AutomaticEnv() // รองรับการอ่าน Environment Variable โดยตรงด้วย
+	viper.AutomaticEnv()
 }
 
 var DB *gorm.DB
 
 func ConnectDB() {
-	dsn := viper.GetString("DATABASE_URL") // ดึง connection string จาก config
+	dsn := viper.GetString("DATABASE_URL")
 	if dsn == "" {
 		log.Fatalf("DATABASE_URL is not set")
 	}
@@ -42,7 +41,6 @@ func ConnectDB() {
 func main() {
 	ConnectDB()
 
-	// อ่านค่า JWT_SECRET ผ่าน viper แทน os.Getenv
 	jwtSecret := viper.GetString("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatalf("JWT_SECRET is not set in environment or .env file")
@@ -50,7 +48,6 @@ func main() {
 
 	r := gin.Default()
 
-	// ตั้งค่า CORS ให้รองรับ Authorization Header จาก React
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
 	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
@@ -61,39 +58,37 @@ func main() {
 		log.Fatalf("Failed to get database connection: %v", err)
 	}
 
-	// Initializing Services
 	repo := auth.NewRepository(dbConn)
-	jwtService := auth.NewJWT(jwtSecret, 24*time.Hour) // ส่งทั้ง Secret และ Expiration Time
+	jwtService := auth.NewJWT(jwtSecret, 24*time.Hour)
 	service := auth.NewService(repo, jwtService)
 	handler := auth.NewHandler(service)
 
-	// Public Endpoints
 	authGroup := r.Group("/auth")
 	{
 		authGroup.POST("/register", handler.Register)
 		authGroup.POST("/login", handler.Login)
 	}
 
-	// Protected Endpoints
 	api := r.Group("/api")
 	api.Use(auth.AuthMiddleware(jwtSecret))
 	{
 		api.GET("/me", func(c *gin.Context) {
-			// แก้ไข Key ให้ตรงกับ c.Set("user_id") ใน middleware.go
 			userID, _ := c.Get("user_id")
+			username, _ := c.Get("username")
+			email, _ := c.Get("email")
 			role, _ := c.Get("role")
 
 			c.JSON(http.StatusOK, gin.H{
-				"user_id": userID,
-				"role":    role,
+				"user_id":  userID,
+				"username": username,
+				"email":    email,
+				"role":     role,
 			})
 		})
 	}
 
-	// Health check endpoint
 	r.GET("/health", healthCheck)
 
-	// เริ่มการทำงานของ API
 	port := viper.GetString("PORT")
 	if port == "" {
 		port = "8080"

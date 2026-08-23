@@ -42,7 +42,7 @@ func (s *Service) Login(req LoginRequest) (string, error) {
 	user, err := s.repo.FindByEmail(req.Email)
 
 	if err != nil {
-		return "", errors.New("invalid credentials")
+		return "", errors.New("invalid email")
 	}
 
 	err = bcrypt.CompareHashAndPassword(
@@ -51,7 +51,7 @@ func (s *Service) Login(req LoginRequest) (string, error) {
 	)
 
 	if err != nil {
-		return "", errors.New("invalid credentials")
+		return "", errors.New("invalid password")
 	}
 
 	token, err := s.jwt.GenerateToken(user)

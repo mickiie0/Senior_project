@@ -18,7 +18,6 @@ func AuthMiddleware(secret string) gin.HandlerFunc {
 			return
 		}
 
-		// ตัดคำว่า Bearer และลบช่องว่างส่วนเกินออก
 		tokenString := strings.TrimSpace(strings.TrimPrefix(header, "Bearer "))
 
 		claims := &Claims{}
@@ -41,6 +40,8 @@ func AuthMiddleware(secret string) gin.HandlerFunc {
 		}
 
 		c.Set("user_id", claims.UserID)
+		c.Set("username", claims.Username)
+		c.Set("email", claims.Email)
 		c.Set("role", claims.Role)
 
 		c.Next()
