@@ -8,20 +8,50 @@ const CameraManagement = () => {
   const [user, setUser] = useState(null);
   const [cameras, setCameras] = useState([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  
-  // State สำหรับการกรองสถานะ ('all', 'active', 'maintenance', 'inactive')
   const [selectedFilter, setSelectedFilter] = useState('all');
-  
-  // State สำหรับ Hover Effect
   const [hoveredCard, setHoveredCard] = useState(null);
 
+  // State สำหรับปุ่มกดทดสอบ IP
+  const [isTestingIP, setIsTestingIP] = useState(false);
+
+  // ค่าเริ่มต้น status เป็นค่าว่าง '' เพื่อให้ Backend ตรวจสอบ Ping อัตโนมัติ
   const [createData, setCreateData] = useState({
+    ip_address: '',
     sub_location: '',
     location: '',
-    status: 'active',
+    status: '',
   });
 
   const [editingCamera, setEditingCamera] = useState(null);
+
+  // --- ฟังก์ชันทดสอบการเชื่อมต่อ IP ---
+  const handleTestConnection = async () => {
+    if (!createData.ip_address) {
+      alert('กรุณากรอก IP Address ก่อนทดสอบ');
+      return;
+    }
+
+    setIsTestingIP(true);
+    const token = localStorage.getItem('token');
+
+    try {
+      const res = await axios.post(
+        'http://localhost:8080/api/cameras/test-ip',
+        { ip_address: createData.ip_address },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data.online) {
+        alert(`🟢 เชื่อมต่อกล้อง (${createData.ip_address}) สำเร็จ!`);
+      } else {
+        alert(`🔴 ไม่สามารถเชื่อมต่อกับกล้อง (${createData.ip_address}) ได้`);
+      }
+    } catch (err) {
+      alert('เกิดข้อผิดพลาดในการทดสอบการเชื่อมต่อ');
+    } finally {
+      setIsTestingIP(false);
+    }
+  };
 
   const fetchCameras = async () => {
     const token = localStorage.getItem('token');
@@ -79,7 +109,7 @@ const CameraManagement = () => {
       await axios.post('http://localhost:8080/api/cameras', createData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setCreateData({ sub_location: '', location: '', status: 'active' });
+      setCreateData({ ip_address: '', sub_location: '', location: '', status: '' });
       fetchCameras();
     } catch (err) {
       alert('เกิดข้อผิดพลาดในการเพิ่มกล้อง');
@@ -98,6 +128,7 @@ const CameraManagement = () => {
       await axios.put(
         `http://localhost:8080/api/cameras/${editingCamera.camera_id}`,
         {
+          ip_address: editingCamera.ip_address,
           sub_location: editingCamera.sub_location,
           location: editingCamera.location,
           status: editingCamera.status,
@@ -126,13 +157,11 @@ const CameraManagement = () => {
     }
   };
 
-  // คำนวณจำนวนกล้อง
   const totalCount = cameras.length;
   const activeCount = cameras.filter((c) => c.status === 'active').length;
   const maintenanceCount = cameras.filter((c) => c.status === 'maintenance').length;
   const inactiveCount = cameras.filter((c) => c.status === 'inactive').length;
 
-  // กรองข้อมูลกล้อง
   const filteredCameras = cameras.filter((cam) => {
     if (selectedFilter === 'all') return true;
     return cam.status === selectedFilter;
@@ -148,55 +177,52 @@ const CameraManagement = () => {
           <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>เพิ่ม แก้ไข และตรวจสอบสถานะของกล้องในระบบ</p>
         </div>
 
-        {/* 4 Cards สรุปสถานะ ( Hover Effect อย่างเดียว ) */}
+        {/* 4 Cards สรุปสถานะ */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-          
-          <div 
-            onClick={() => setSelectedFilter('all')} 
-            onMouseEnter={() => setHoveredCard('all')}
-            onMouseLeave={() => setHoveredCard(null)}
-            style={getCardStyle('#2563eb', selectedFilter === 'all', hoveredCard === 'all')}
-          >
+          <div onClick={() => setSelectedFilter('all')} onMouseEnter={() => setHoveredCard('all')} onMouseLeave={() => setHoveredCard(null)} style={getCardStyle('#2563eb', selectedFilter === 'all', hoveredCard === 'all')}>
             <span style={cardTitleStyle}>กล้องทั้งหมด</span>
             <div style={cardNumStyle}>{totalCount} <span style={unitStyle}>ตัว</span></div>
           </div>
-
-          <div 
-            onClick={() => setSelectedFilter('active')} 
-            onMouseEnter={() => setHoveredCard('active')}
-            onMouseLeave={() => setHoveredCard(null)}
-            style={getCardStyle('#16a34a', selectedFilter === 'active', hoveredCard === 'active')}
-          >
+          <div onClick={() => setSelectedFilter('active')} onMouseEnter={() => setHoveredCard('active')} onMouseLeave={() => setHoveredCard(null)} style={getCardStyle('#16a34a', selectedFilter === 'active', hoveredCard === 'active')}>
             <span style={cardTitleStyle}>ใช้งานปกติ (Active)</span>
             <div style={cardNumStyle}>{activeCount} <span style={unitStyle}>ตัว</span></div>
           </div>
-
-          <div 
-            onClick={() => setSelectedFilter('maintenance')} 
-            onMouseEnter={() => setHoveredCard('maintenance')}
-            onMouseLeave={() => setHoveredCard(null)}
-            style={getCardStyle('#d97706', selectedFilter === 'maintenance', hoveredCard === 'maintenance')}
-          >
+          <div onClick={() => setSelectedFilter('maintenance')} onMouseEnter={() => setHoveredCard('maintenance')} onMouseLeave={() => setHoveredCard(null)} style={getCardStyle('#d97706', selectedFilter === 'maintenance', hoveredCard === 'maintenance')}>
             <span style={cardTitleStyle}>ส่งซ่อม (Maintenance)</span>
             <div style={cardNumStyle}>{maintenanceCount} <span style={unitStyle}>ตัว</span></div>
           </div>
-
-          <div 
-            onClick={() => setSelectedFilter('inactive')} 
-            onMouseEnter={() => setHoveredCard('inactive')}
-            onMouseLeave={() => setHoveredCard(null)}
-            style={getCardStyle('#dc2626', selectedFilter === 'inactive', hoveredCard === 'inactive')}
-          >
+          <div onClick={() => setSelectedFilter('inactive')} onMouseEnter={() => setHoveredCard('inactive')} onMouseLeave={() => setHoveredCard(null)} style={getCardStyle('#dc2626', selectedFilter === 'inactive', hoveredCard === 'inactive')}>
             <span style={cardTitleStyle}>ปิดใช้งาน (Inactive)</span>
             <div style={cardNumStyle}>{inactiveCount} <span style={unitStyle}>ตัว</span></div>
           </div>
-
         </div>
 
-        {/* Form เพิ่มกล้องใหม่ */}
+        {/* Form เพิ่มกล้องใหม่ (ปรับ gridColumn ปุ่มให้กว้างขึ้นเพื่อความสวยงาม) */}
         <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '32px' }}>
           <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: '#334155' }}>+ เพิ่มกล้องใหม่</h3>
-          <form onSubmit={handleCreate} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 160px 120px', gap: '16px', alignItems: 'end' }}>
+          <form onSubmit={handleCreate} style={{ display: 'grid', gridTemplateColumns: '1.2fr 150px 1fr 1fr 150px 100px', gap: '12px', alignItems: 'end' }}>
+            <div>
+              <label style={labelStyle}>IP Address</label>
+              <input
+                type="text"
+                placeholder="เช่น 192.168.1.100"
+                value={createData.ip_address}
+                onChange={(e) => setCreateData({ ...createData, ip_address: e.target.value })}
+                required
+                style={inputStyle}
+              />
+            </div>
+            
+            {/* ปุ่มทดสอบการเชื่อมต่อที่ปรับขนาดแล้ว */}
+            <button
+              type="button"
+              onClick={handleTestConnection}
+              disabled={isTestingIP}
+              style={{ ...btnSecondary, backgroundColor: isTestingIP ? '#cbd5e1' : '#e2e8f0' }}
+            >
+              {isTestingIP ? 'กำลังทดสอบ...' : 'ทดสอบการเชื่อมต่อ'}
+            </button>
+
             <div>
               <label style={labelStyle}>Sub Location</label>
               <input
@@ -226,6 +252,7 @@ const CameraManagement = () => {
                 onChange={(e) => setCreateData({ ...createData, status: e.target.value })}
                 style={inputStyle}
               >
+                <option value=""></option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
                 <option value="maintenance">Maintenance</option>
@@ -252,6 +279,7 @@ const CameraManagement = () => {
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
                 <th style={{ padding: '16px' }}>Camera ID</th>
+                <th style={{ padding: '16px' }}>IP Address</th>
                 <th style={{ padding: '16px' }}>Sub Location</th>
                 <th style={{ padding: '16px' }}>Location</th>
                 <th style={{ padding: '16px' }}>Status</th>
@@ -263,6 +291,9 @@ const CameraManagement = () => {
                 filteredCameras.map((cam) => (
                   <tr key={cam.camera_id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '16px', fontFamily: 'monospace', color: '#64748b' }}>{cam.camera_id}</td>
+                    <td style={{ padding: '16px', fontFamily: 'monospace', fontWeight: '600', color: '#1e293b' }}>
+                      {cam.ip_address || '-'}
+                    </td>
                     <td style={{ padding: '16px', fontWeight: '500' }}>{cam.sub_location}</td>
                     <td style={{ padding: '16px' }}>{cam.location}</td>
                     <td style={{ padding: '16px' }}><StatusBadge status={cam.status} /></td>
@@ -274,7 +305,7 @@ const CameraManagement = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
+                  <td colSpan="6" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
                     ไม่พบข้อมูลกล้องตามเงื่อนไขการกรอง
                   </td>
                 </tr>
@@ -289,6 +320,16 @@ const CameraManagement = () => {
             <div style={modalBox}>
               <h3 style={{ marginTop: 0, marginBottom: '16px' }}>แก้ไขข้อมูลกล้อง</h3>
               <form onSubmit={handleUpdate}>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={labelStyle}>IP Address</label>
+                  <input
+                    type="text"
+                    value={editingCamera.ip_address || ''}
+                    onChange={(e) => setEditingCamera({ ...editingCamera, ip_address: e.target.value })}
+                    style={inputStyle}
+                    required
+                  />
+                </div>
                 <div style={{ marginBottom: '12px' }}>
                   <label style={labelStyle}>Sub Location</label>
                   <input
@@ -349,7 +390,6 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-// Style สำหรับ Card (Hover แล้วลอยตัวขึ้น 4px + เพิ่ม shadow)
 const getCardStyle = (borderColor, isSelected, isHovered) => ({
   backgroundColor: '#fff',
   padding: '16px 20px',
@@ -372,6 +412,25 @@ const unitStyle = { fontSize: '13px', fontWeight: 'normal', color: '#64748b' };
 
 const inputStyle = { padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', width: '100%', boxSizing: 'border-box' };
 const btnPrimary = { backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', height: '40px' };
+
+// ปุ่มรองสำหรับทดสอบการเชื่อมต่อ
+const btnSecondary = {
+  color: '#334155',
+  border: '1px solid #cbd5e1',
+  padding: '0 12px',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  fontWeight: '500',
+  height: '40px',
+  fontSize: '13px',
+  whiteSpace: 'nowrap',
+  width: '100%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  boxSizing: 'border-box',
+};
+
 const btnEdit = { backgroundColor: '#f1f5f9', color: '#334155', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', marginRight: '8px' };
 const btnDelete = { backgroundColor: '#fef2f2', color: '#ef4444', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' };
 const btnCancel = { backgroundColor: '#e2e8f0', color: '#475569', border: 'none', padding: '10px 16px', borderRadius: '6px', cursor: 'pointer' };

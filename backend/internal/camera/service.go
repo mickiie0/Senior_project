@@ -1,6 +1,9 @@
 package camera
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 type Service interface {
 	CreateCamera(input CreateCameraInput) (*Camera, error)
@@ -20,11 +23,18 @@ func NewService(repo Repository) Service {
 
 func (s *service) CreateCamera(input CreateCameraInput) (*Camera, error) {
 	status := input.Status
+
+	// ถ้าผู้ใช้ไม่ได้เลือก status มาจากฟอร์ม ให้ทดสอบ Ping สัญญาณ IP ล่วงหน้าทันที 2 วินาที
 	if status == "" {
-		status = "active"
+		if input.IPAddress != "" && PingReCamera(input.IPAddress, 2*time.Second) {
+			status = "active"
+		} else {
+			status = "inactive"
+		}
 	}
 
 	cam := &Camera{
+		IPAddress:   input.IPAddress,
 		SubLocation: input.SubLocation,
 		Location:    input.Location,
 		Status:      status,
@@ -51,6 +61,9 @@ func (s *service) UpdateCamera(id string, input UpdateCameraInput) (*Camera, err
 		return nil, errors.New("camera not found")
 	}
 
+	if input.IPAddress != "" {
+		cam.IPAddress = input.IPAddress
+	}
 	if input.SubLocation != "" {
 		cam.SubLocation = input.SubLocation
 	}

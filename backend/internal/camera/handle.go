@@ -2,6 +2,7 @@ package camera
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,6 +13,26 @@ type Handler struct {
 
 func NewHandler(service Service) *Handler {
 	return &Handler{service: service}
+}
+
+type TestIPInput struct {
+	IPAddress string `json:"ip_address" binding:"required,ip"`
+}
+
+// TestConnection เพิ่ม Handler สำหรับปุ่ม "ทดสอบ IP" จากหน้า React
+func (h *Handler) TestConnection(c *gin.Context) {
+	var input TestIPInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "กรุณาระบุ IP Address ที่ถูกต้อง"})
+		return
+	}
+
+	isAlive := PingReCamera(input.IPAddress, 2*time.Second)
+
+	c.JSON(http.StatusOK, gin.H{
+		"ip":     input.IPAddress,
+		"online": isAlive,
+	})
 }
 
 func (h *Handler) Create(c *gin.Context) {

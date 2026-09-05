@@ -3,6 +3,7 @@ package main
 import (
 	"fire_detection_web_app/internal/auth"
 	"fire_detection_web_app/internal/camera"
+	"fire_detection_web_app/internal/detection" // <-- เปลี่ยน import เป็น detection
 
 	"log"
 	"net/http"
@@ -42,10 +43,13 @@ func ConnectDB() {
 func main() {
 	ConnectDB()
 
-	// Auto Migrate ทั้งตาราง users และ cameras
-	if err := DB.AutoMigrate(&auth.User{}, &camera.Camera{}); err != nil {
+	// Auto Migrate ตาราง detection.DetectionEvent
+	if err := DB.AutoMigrate(&auth.User{}, &camera.Camera{}, &detection.DetectionEvent{}); err != nil {
 		log.Fatalf("Failed to auto migrate database tables: %v", err)
 	}
+
+	log.Println("Starting Camera Ping Worker...")
+	camera.StartPingWorker(DB, 1*time.Minute)
 
 	jwtSecret := viper.GetString("JWT_SECRET")
 	if jwtSecret == "" {
@@ -59,25 +63,28 @@ func main() {
 	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
 	r.Use(cors.New(config))
 
-	// ส่ง DB (*gorm.DB) เข้าไปตรงๆ ได้เลย ไม่ต้องแปลงเป็น dbConn (*sql.DB)
+	// Auth Module
 	repo := auth.NewRepository(DB)
 	jwtService := auth.NewJWT(jwtSecret, 24*time.Hour)
 	service := auth.NewService(repo, jwtService)
 	handler := auth.NewHandler(service)
 
-	// Setup Camera Module
+	// Camera Module
 	camRepo := camera.NewRepository(DB)
 	camService := camera.NewService(camRepo)
 	camHandler := camera.NewHandler(camService)
 
-	// Auth Public Routes
+	// Detection Module
+	detectionRepo := detection.NewRepository(DB)
+	detectionService := detection.NewService(detectionRepo)
+	detectionHandler := detection.NewHandler(detectionService)
+
 	authGroup := r.Group("/auth")
 	{
 		authGroup.POST("/register", handler.Register)
 		authGroup.POST("/login", handler.Login)
 	}
 
-	// Protected API Routes
 	api := r.Group("/api")
 	api.Use(auth.AuthMiddleware(jwtSecret))
 	{
@@ -95,16 +102,19 @@ func main() {
 			})
 		})
 
-		// Camera Management Routes (จำกัดสิทธิ์เฉพาะ role: admin เท่านั้น)
 		cameras := api.Group("/cameras")
 		cameras.Use(auth.RequireRole("admin"))
 		{
+			cameras.POST("/test-ip", camHandler.TestConnection)
 			cameras.POST("", camHandler.Create)
 			cameras.GET("", camHandler.GetAll)
 			cameras.GET("/:id", camHandler.GetByID)
 			cameras.PUT("/:id", camHandler.Update)
 			cameras.DELETE("/:id", camHandler.Delete)
 		}
+
+		// Endpoint สำหรับยิงรับข้อมูล Detection
+		api.POST("/detections", detectionHandler.ReceiveEvent)
 	}
 
 	r.GET("/health", healthCheck)
