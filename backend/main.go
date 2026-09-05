@@ -2,6 +2,7 @@ package main
 
 import (
 	"fire_detection_web_app/internal/auth"
+	"fire_detection_web_app/internal/camera"
 
 	"log"
 	"net/http"
@@ -41,6 +42,11 @@ func ConnectDB() {
 func main() {
 	ConnectDB()
 
+	// Auto Migrate ทั้งตาราง users และ cameras
+	if err := DB.AutoMigrate(&auth.User{}, &camera.Camera{}); err != nil {
+		log.Fatalf("Failed to auto migrate database tables: %v", err)
+	}
+
 	jwtSecret := viper.GetString("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatalf("JWT_SECRET is not set in environment or .env file")
@@ -53,22 +59,25 @@ func main() {
 	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
 	r.Use(cors.New(config))
 
-	dbConn, err := DB.DB()
-	if err != nil {
-		log.Fatalf("Failed to get database connection: %v", err)
-	}
-
-	repo := auth.NewRepository(dbConn)
+	// ส่ง DB (*gorm.DB) เข้าไปตรงๆ ได้เลย ไม่ต้องแปลงเป็น dbConn (*sql.DB)
+	repo := auth.NewRepository(DB)
 	jwtService := auth.NewJWT(jwtSecret, 24*time.Hour)
 	service := auth.NewService(repo, jwtService)
 	handler := auth.NewHandler(service)
 
+	// Setup Camera Module
+	camRepo := camera.NewRepository(DB)
+	camService := camera.NewService(camRepo)
+	camHandler := camera.NewHandler(camService)
+
+	// Auth Public Routes
 	authGroup := r.Group("/auth")
 	{
 		authGroup.POST("/register", handler.Register)
 		authGroup.POST("/login", handler.Login)
 	}
 
+	// Protected API Routes
 	api := r.Group("/api")
 	api.Use(auth.AuthMiddleware(jwtSecret))
 	{
@@ -85,6 +94,17 @@ func main() {
 				"role":     role,
 			})
 		})
+
+		// Camera Management Routes (จำกัดสิทธิ์เฉพาะ role: admin เท่านั้น)
+		cameras := api.Group("/cameras")
+		cameras.Use(auth.RequireRole("admin"))
+		{
+			cameras.POST("", camHandler.Create)
+			cameras.GET("", camHandler.GetAll)
+			cameras.GET("/:id", camHandler.GetByID)
+			cameras.PUT("/:id", camHandler.Update)
+			cameras.DELETE("/:id", camHandler.Delete)
+		}
 	}
 
 	r.GET("/health", healthCheck)
