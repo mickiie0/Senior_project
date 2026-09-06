@@ -3,7 +3,8 @@ package main
 import (
 	"fire_detection_web_app/internal/auth"
 	"fire_detection_web_app/internal/camera"
-	"fire_detection_web_app/internal/detection" // <-- เปลี่ยน import เป็น detection
+	"fire_detection_web_app/internal/dashboard"
+	"fire_detection_web_app/internal/detection"
 
 	"log"
 	"net/http"
@@ -79,6 +80,10 @@ func main() {
 	detectionService := detection.NewService(detectionRepo)
 	detectionHandler := detection.NewHandler(detectionService)
 
+	dashboardRepo := dashboard.NewRepository(DB)
+	dashboardService := dashboard.NewService(dashboardRepo)
+	dashboardHandler := dashboard.NewHandler(dashboardService)
+
 	authGroup := r.Group("/auth")
 	{
 		authGroup.POST("/register", handler.Register)
@@ -115,6 +120,11 @@ func main() {
 
 		// Endpoint สำหรับยิงรับข้อมูล Detection
 		api.POST("/detections", detectionHandler.ReceiveEvent)
+
+		//Endpoint for get detections
+		detections := api.Group("/detections")
+		detections.GET("/recent-detections", dashboardHandler.GetRecentDetections)
+		detections.GET("/all-detections", dashboardHandler.GetAllDetections)
 	}
 
 	r.GET("/health", healthCheck)
