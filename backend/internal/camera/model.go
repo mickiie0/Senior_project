@@ -8,13 +8,17 @@ import (
 )
 
 type Camera struct {
-	ID          string    `gorm:"type:uuid;primary_key;" json:"camera_id"`
+	ID          string    `gorm:"type:uuid;primaryKey" json:"camera_id"`
 	IPAddress   string    `gorm:"type:varchar(45);not null" json:"ip_address"`
 	SubLocation string    `gorm:"type:varchar(100);not null" json:"sub_location"`
 	Location    string    `gorm:"type:varchar(100);not null" json:"location"`
-	Status      string    `gorm:"type:varchar(20);default:'active'" json:"status"`
+	Status      string    `gorm:"type:varchar(20);not null;default:'unknown'" json:"status"`
 	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+func (Camera) TableName() string {
+	return "cameras"
 }
 
 func (c *Camera) BeforeCreate(tx *gorm.DB) (err error) {

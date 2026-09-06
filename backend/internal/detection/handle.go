@@ -15,16 +15,25 @@ func NewHandler(service Service) *Handler {
 }
 
 func (h *Handler) ReceiveEvent(c *gin.Context) {
-	var req DetectionEvent
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var input CreateEventInput
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := h.service.ProcessEvent(&req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save event"})
+	event, err := h.service.ProcessEvent(input)
+	if err != nil {
+		if err.Error() == "camera_id not found in system" {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process detection event"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Event recorded"})
+	c.JSON(http.StatusOK, gin.H{
+		"status":   "success",
+		"message":  "Detection event recorded successfully",
+		"event_id": event.EventID,
+	})
 }

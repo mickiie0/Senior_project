@@ -3,7 +3,6 @@ package main
 import (
 	"fire_detection_web_app/internal/auth"
 	"fire_detection_web_app/internal/camera"
-	"fire_detection_web_app/internal/dashboard"
 	"fire_detection_web_app/internal/detection"
 
 	"log"
@@ -44,7 +43,7 @@ func ConnectDB() {
 func main() {
 	ConnectDB()
 
-	// Auto Migrate ตาราง detection.DetectionEvent
+	// Auto Migrate ตารางทั้งหมด
 	if err := DB.AutoMigrate(&auth.User{}, &camera.Camera{}, &detection.DetectionEvent{}); err != nil {
 		log.Fatalf("Failed to auto migrate database tables: %v", err)
 	}
@@ -80,16 +79,19 @@ func main() {
 	detectionService := detection.NewService(detectionRepo)
 	detectionHandler := detection.NewHandler(detectionService)
 
-	dashboardRepo := dashboard.NewRepository(DB)
-	dashboardService := dashboard.NewService(dashboardRepo)
-	dashboardHandler := dashboard.NewHandler(dashboardService)
-
 	authGroup := r.Group("/auth")
 	{
 		authGroup.POST("/register", handler.Register)
 		authGroup.POST("/login", handler.Login)
 	}
 
+	// Public API Endpoints (ไม่ต้องผ่าน Authentication Middleware)
+	publicApi := r.Group("/api")
+	{
+		publicApi.POST("/detections", detectionHandler.ReceiveEvent)
+	}
+
+	// Protected API Endpoints (ต้องผ่าน Authentication Middleware)
 	api := r.Group("/api")
 	api.Use(auth.AuthMiddleware(jwtSecret))
 	{
@@ -117,14 +119,6 @@ func main() {
 			cameras.PUT("/:id", camHandler.Update)
 			cameras.DELETE("/:id", camHandler.Delete)
 		}
-
-		// Endpoint สำหรับยิงรับข้อมูล Detection
-		api.POST("/detections", detectionHandler.ReceiveEvent)
-
-		//Endpoint for get detections
-		detections := api.Group("/detections")
-		detections.GET("/recent-detections", dashboardHandler.GetRecentDetections)
-		detections.GET("/all-detections", dashboardHandler.GetAllDetections)
 	}
 
 	r.GET("/health", healthCheck)
