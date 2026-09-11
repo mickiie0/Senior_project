@@ -1,30 +1,74 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 
+const API_BASE_URL = 'http://localhost:8080/api';
+
+const CAMERA_STATUS = {
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  MAINTENANCE: 'maintenance',
+};
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return { headers: { Authorization: `Bearer ${token}` } };
+};
+
 const CameraManagement = () => {
   const navigate = useNavigate();
+
   const [user, setUser] = useState(null);
   const [cameras, setCameras] = useState([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [editingCamera, setEditingCamera] = useState(null);
 
-  // State สำหรับปุ่มกดทดสอบ IP
   const [isTestingIP, setIsTestingIP] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ค่าเริ่มต้น status เป็นค่าว่าง '' เพื่อให้ Backend ตรวจสอบ Ping อัตโนมัติ
   const [createData, setCreateData] = useState({
     ip_address: '',
     sub_location: '',
     location: '',
-    status: '',
   });
 
-  const [editingCamera, setEditingCamera] = useState(null);
+  const fetchCameras = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/cameras`, getAuthHeaders());
+      setCameras(res.data || []);
+    } catch (err) {
+      console.error('Failed to fetch cameras', err);
+    }
+  }, []);
 
-  // --- ฟังก์ชันทดสอบการเชื่อมต่อ IP ---
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/');
+      return;
+    }
+
+    const initialize = async () => {
+      try {
+        const userRes = await axios.get(`${API_BASE_URL}/me`, getAuthHeaders());
+        if (userRes.data.role?.toLowerCase() !== 'admin') {
+          navigate('/dashboard');
+          return;
+        }
+        setUser(userRes.data);
+        await fetchCameras();
+      } catch (err) {
+        localStorage.removeItem('token');
+        navigate('/');
+      }
+    };
+
+    initialize();
+  }, [navigate, fetchCameras]);
+
   const handleTestConnection = async () => {
     if (!createData.ip_address) {
       alert('กรุณากรอก IP Address ก่อนทดสอบ');
@@ -32,13 +76,11 @@ const CameraManagement = () => {
     }
 
     setIsTestingIP(true);
-    const token = localStorage.getItem('token');
-
     try {
       const res = await axios.post(
-        'http://localhost:8080/api/cameras/test-ip',
+        `${API_BASE_URL}/cameras/test-ip`,
         { ip_address: createData.ip_address },
-        { headers: { Authorization: `Bearer ${token}` } }
+        getAuthHeaders()
       );
 
       if (res.data.online) {
@@ -53,66 +95,19 @@ const CameraManagement = () => {
     }
   };
 
-  const fetchCameras = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const res = await axios.get('http://localhost:8080/api/cameras', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setCameras(res.data || []);
-    } catch (err) {
-      console.error('Failed to fetch cameras', err);
-    }
-  };
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-
-    const fetchCamerasData = async (headers) => {
-      try {
-        const res = await axios.get('http://localhost:8080/api/cameras', headers);
-        setCameras(res.data || []);
-      } catch (err) {
-        console.error('Failed to fetch cameras', err);
-      }
-    };
-
-    const fetchData = async () => {
-      if (!token) {
-        navigate('/');
-        return;
-      }
-
-      const authHeader = { headers: { Authorization: `Bearer ${token}` } };
-
-      try {
-        const userRes = await axios.get('http://localhost:8080/api/me', authHeader);
-        if (userRes.data.role?.toLowerCase() !== 'admin') {
-          navigate('/dashboard');
-          return;
-        }
-        setUser(userRes.data);
-        await fetchCamerasData(authHeader);
-      } catch (err) {
-        localStorage.removeItem('token');
-        navigate('/');
-      }
-    };
-
-    fetchData();
-  }, [navigate]);
-
   const handleCreate = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
     try {
-      await axios.post('http://localhost:8080/api/cameras', createData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setCreateData({ ip_address: '', sub_location: '', location: '', status: '' });
-      fetchCameras();
+      await axios.post(`${API_BASE_URL}/cameras`, createData, getAuthHeaders());
+      setCreateData({ ip_address: '', sub_location: '', location: '' });
+      await fetchCameras();
     } catch (err) {
       alert('เกิดข้อผิดพลาดในการเพิ่มกล้อง');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -123,19 +118,16 @@ const CameraManagement = () => {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
     try {
       await axios.put(
-        `http://localhost:8080/api/cameras/${editingCamera.camera_id}`,
+        `${API_BASE_URL}/cameras/${editingCamera.camera_id}`,
         {
           ip_address: editingCamera.ip_address,
           sub_location: editingCamera.sub_location,
           location: editingCamera.location,
           status: editingCamera.status,
         },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        getAuthHeaders()
       );
       setIsEditModalOpen(false);
       fetchCameras();
@@ -146,11 +138,8 @@ const CameraManagement = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm('คุณแน่ใจหรือไม่ที่จะลบกล้องตัวนี้?')) return;
-    const token = localStorage.getItem('token');
     try {
-      await axios.delete(`http://localhost:8080/api/cameras/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(`${API_BASE_URL}/cameras/${id}`, getAuthHeaders());
       fetchCameras();
     } catch (err) {
       alert('ลบกล้องไม่สำเร็จ');
@@ -158,154 +147,164 @@ const CameraManagement = () => {
   };
 
   const totalCount = cameras.length;
-  const activeCount = cameras.filter((c) => c.status === 'active').length;
-  const maintenanceCount = cameras.filter((c) => c.status === 'maintenance').length;
-  const inactiveCount = cameras.filter((c) => c.status === 'inactive').length;
+  const activeCount = cameras.filter((c) => c.status === CAMERA_STATUS.ACTIVE).length;
+  const maintenanceCount = cameras.filter((c) => c.status === CAMERA_STATUS.MAINTENANCE).length;
+  const inactiveCount = cameras.filter((c) => c.status === CAMERA_STATUS.INACTIVE).length;
 
-  const filteredCameras = cameras.filter((cam) => {
-    if (selectedFilter === 'all') return true;
-    return cam.status === selectedFilter;
-  });
+  const filteredCameras = cameras.filter(
+    (cam) => selectedFilter === 'all' || cam.status === selectedFilter
+  );
+
+  const summaryCards = [
+    { key: 'all', label: 'กล้องทั้งหมด', count: totalCount, color: '#2563eb' },
+    { key: CAMERA_STATUS.ACTIVE, label: 'ใช้งานปกติ (Active)', count: activeCount, color: '#16a34a' },
+    { key: CAMERA_STATUS.MAINTENANCE, label: 'ส่งซ่อม (Maintenance)', count: maintenanceCount, color: '#d97706' },
+    { key: CAMERA_STATUS.INACTIVE, label: 'ปิดใช้งาน (Inactive)', count: inactiveCount, color: '#dc2626' },
+  ];
 
   return (
     <MainLayout title="Camera Management" username={user?.username || 'User'} userRole={user?.role || 'admin'}>
-      <div style={{ padding: '8px' }}>
-        
+      <div style={styles.page}>
         {/* Header */}
-        <div style={{ marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>จัดการกล้องวงจรปิด</h2>
-          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>เพิ่ม แก้ไข และตรวจสอบสถานะของกล้องในระบบ</p>
+        <div style={styles.header}>
+          <h2 style={styles.headerTitle}>จัดการกล้องวงจรปิด</h2>
+          <p style={styles.headerSubtitle}>เพิ่ม แก้ไข และตรวจสอบสถานะของกล้องในระบบ</p>
         </div>
 
-        {/* 4 Cards สรุปสถานะ */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-          <div onClick={() => setSelectedFilter('all')} onMouseEnter={() => setHoveredCard('all')} onMouseLeave={() => setHoveredCard(null)} style={getCardStyle('#2563eb', selectedFilter === 'all', hoveredCard === 'all')}>
-            <span style={cardTitleStyle}>กล้องทั้งหมด</span>
-            <div style={cardNumStyle}>{totalCount} <span style={unitStyle}>ตัว</span></div>
-          </div>
-          <div onClick={() => setSelectedFilter('active')} onMouseEnter={() => setHoveredCard('active')} onMouseLeave={() => setHoveredCard(null)} style={getCardStyle('#16a34a', selectedFilter === 'active', hoveredCard === 'active')}>
-            <span style={cardTitleStyle}>ใช้งานปกติ (Active)</span>
-            <div style={cardNumStyle}>{activeCount} <span style={unitStyle}>ตัว</span></div>
-          </div>
-          <div onClick={() => setSelectedFilter('maintenance')} onMouseEnter={() => setHoveredCard('maintenance')} onMouseLeave={() => setHoveredCard(null)} style={getCardStyle('#d97706', selectedFilter === 'maintenance', hoveredCard === 'maintenance')}>
-            <span style={cardTitleStyle}>ส่งซ่อม (Maintenance)</span>
-            <div style={cardNumStyle}>{maintenanceCount} <span style={unitStyle}>ตัว</span></div>
-          </div>
-          <div onClick={() => setSelectedFilter('inactive')} onMouseEnter={() => setHoveredCard('inactive')} onMouseLeave={() => setHoveredCard(null)} style={getCardStyle('#dc2626', selectedFilter === 'inactive', hoveredCard === 'inactive')}>
-            <span style={cardTitleStyle}>ปิดใช้งาน (Inactive)</span>
-            <div style={cardNumStyle}>{inactiveCount} <span style={unitStyle}>ตัว</span></div>
-          </div>
+        {/* Summary Grid */}
+        <div style={styles.summaryGrid}>
+          {summaryCards.map(({ key, label, count, color }) => (
+            <div
+              key={key}
+              onClick={() => setSelectedFilter(key)}
+              onMouseEnter={() => setHoveredCard(key)}
+              onMouseLeave={() => setHoveredCard(null)}
+              style={getCardStyle(color, selectedFilter === key, hoveredCard === key)}
+            >
+              <span style={styles.cardTitle}>{label}</span>
+              <div style={styles.cardNum}>
+                {count} <span style={styles.unit}>ตัว</span>
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* Form เพิ่มกล้องใหม่ (ปรับ gridColumn ปุ่มให้กว้างขึ้นเพื่อความสวยงาม) */}
-        <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '32px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: '#334155' }}>+ เพิ่มกล้องใหม่</h3>
-          <form onSubmit={handleCreate} style={{ display: 'grid', gridTemplateColumns: '1.2fr 150px 1fr 1fr 150px 100px', gap: '12px', alignItems: 'end' }}>
+        {/* Form Card (จัด Grid ใหม่เป็น 4 คอลัมน์อย่างสมดุล) */}
+        <div style={styles.formCard}>
+          <h3 style={styles.formTitle}>+ เพิ่มกล้องใหม่</h3>
+          <form onSubmit={handleCreate} style={styles.formGrid}>
             <div>
-              <label style={labelStyle}>IP Address</label>
+              <label style={styles.label}>IP Address</label>
               <input
                 type="text"
                 placeholder="เช่น 192.168.1.100"
                 value={createData.ip_address}
                 onChange={(e) => setCreateData({ ...createData, ip_address: e.target.value })}
                 required
-                style={inputStyle}
+                disabled={isSubmitting}
+                style={styles.input}
               />
             </div>
-            
-            {/* ปุ่มทดสอบการเชื่อมต่อที่ปรับขนาดแล้ว */}
-            <button
-              type="button"
-              onClick={handleTestConnection}
-              disabled={isTestingIP}
-              style={{ ...btnSecondary, backgroundColor: isTestingIP ? '#cbd5e1' : '#e2e8f0' }}
-            >
-              {isTestingIP ? 'กำลังทดสอบ...' : 'ทดสอบการเชื่อมต่อ'}
-            </button>
 
             <div>
-              <label style={labelStyle}>Sub Location</label>
+              <label style={styles.label}>Sub Location</label>
               <input
                 type="text"
                 placeholder="เช่น ชั้น 2 ห้องโถง"
                 value={createData.sub_location}
                 onChange={(e) => setCreateData({ ...createData, sub_location: e.target.value })}
                 required
-                style={inputStyle}
+                disabled={isSubmitting}
+                style={styles.input}
               />
             </div>
+
             <div>
-              <label style={labelStyle}>Location</label>
+              <label style={styles.label}>Location</label>
               <input
                 type="text"
                 placeholder="เช่น อาคาร A"
                 value={createData.location}
                 onChange={(e) => setCreateData({ ...createData, location: e.target.value })}
                 required
-                style={inputStyle}
+                disabled={isSubmitting}
+                style={styles.input}
               />
             </div>
-            <div>
-              <label style={labelStyle}>Status</label>
-              <select
-                value={createData.status}
-                onChange={(e) => setCreateData({ ...createData, status: e.target.value })}
-                style={inputStyle}
+
+            {/* Action Group: รวมปุ่มทดสอบและปุ่มบันทึกไว้คอลัมน์เดียวกันอย่างลงตัว */}
+            <div style={styles.actionGroup}>
+              <button
+                type="button"
+                onClick={handleTestConnection}
+                disabled={isTestingIP || isSubmitting}
+                style={{
+                  ...styles.btnSecondary,
+                  backgroundColor: isTestingIP || isSubmitting ? '#e2e8f0' : '#f1f5f9',
+                }}
               >
-                <option value=""></option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="maintenance">Maintenance</option>
-              </select>
+                {isTestingIP ? 'กำลังทดสอบ' : 'ทดสอบ IP'}
+              </button>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                style={{
+                  ...styles.btnPrimary,
+                  backgroundColor: isSubmitting ? '#93c5fd' : '#2563eb',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {isSubmitting ? 'กำลังบันทึก' : 'บันทึก'}
+              </button>
             </div>
-            <button type="submit" style={btnPrimary}>บันทึก</button>
           </form>
         </div>
 
-        {/* ตารางแสดงผล */}
-        <div style={{ backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+        {/* Table Card */}
+        <div style={styles.tableCard}>
           {selectedFilter !== 'all' && (
-            <div style={{ padding: '12px 16px', backgroundColor: '#f1f5f9', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', color: '#475569' }}>
+            <div style={styles.filterBar}>
+              <span style={styles.filterText}>
                 กำลังกรองแสดงผลเฉพาะ: <strong>{selectedFilter.toUpperCase()}</strong> ({filteredCameras.length} รายการ)
               </span>
-              <button onClick={() => setSelectedFilter('all')} style={{ border: 'none', background: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+              <button onClick={() => setSelectedFilter('all')} style={styles.filterClearBtn}>
                 ล้างการกรองทั้งหมด
               </button>
             </div>
           )}
 
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+          <table style={styles.table}>
             <thead>
-              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
-                <th style={{ padding: '16px' }}>Camera ID</th>
-                <th style={{ padding: '16px' }}>IP Address</th>
-                <th style={{ padding: '16px' }}>Sub Location</th>
-                <th style={{ padding: '16px' }}>Location</th>
-                <th style={{ padding: '16px' }}>Status</th>
-                <th style={{ padding: '16px', textAlign: 'center' }}>Actions</th>
+              <tr style={styles.tableHeadRow}>
+                <th style={styles.th}>Camera ID</th>
+                <th style={styles.th}>IP Address</th>
+                <th style={styles.th}>Sub Location</th>
+                <th style={styles.th}>Location</th>
+                <th style={styles.th}>Status</th>
+                <th style={{ ...styles.th, textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredCameras.length > 0 ? (
                 filteredCameras.map((cam) => (
-                  <tr key={cam.camera_id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '16px', fontFamily: 'monospace', color: '#64748b' }}>{cam.camera_id}</td>
-                    <td style={{ padding: '16px', fontFamily: 'monospace', fontWeight: '600', color: '#1e293b' }}>
-                      {cam.ip_address || '-'}
+                  <tr key={cam.camera_id} style={styles.tableRow}>
+                    <td style={styles.tdMono}>{cam.camera_id}</td>
+                    <td style={styles.tdMonoStrong}>{cam.ip_address || '-'}</td>
+                    <td style={styles.tdMedium}>{cam.sub_location}</td>
+                    <td style={styles.td}>{cam.location}</td>
+                    <td style={styles.td}>
+                      <StatusBadge status={cam.status} />
                     </td>
-                    <td style={{ padding: '16px', fontWeight: '500' }}>{cam.sub_location}</td>
-                    <td style={{ padding: '16px' }}>{cam.location}</td>
-                    <td style={{ padding: '16px' }}><StatusBadge status={cam.status} /></td>
-                    <td style={{ padding: '16px', textAlign: 'center' }}>
-                      <button onClick={() => openEditModal(cam)} style={btnEdit}>แก้ไข</button>
-                      <button onClick={() => handleDelete(cam.camera_id)} style={btnDelete}>ลบ</button>
+                    <td style={{ ...styles.td, textAlign: 'center' }}>
+                      <button onClick={() => openEditModal(cam)} style={styles.btnEdit}>แก้ไข</button>
+                      <button onClick={() => handleDelete(cam.camera_id)} style={styles.btnDelete}>ลบ</button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
+                  <td colSpan="6" style={styles.emptyState}>
                     ไม่พบข้อมูลกล้องตามเงื่อนไขการกรอง
                   </td>
                 </tr>
@@ -314,77 +313,86 @@ const CameraManagement = () => {
           </table>
         </div>
 
-        {/* Edit Modal */}
-        {isEditModalOpen && (
-          <div style={modalOverlay}>
-            <div style={modalBox}>
-              <h3 style={{ marginTop: 0, marginBottom: '16px' }}>แก้ไขข้อมูลกล้อง</h3>
+        {/* Modal Edit */}
+        {isEditModalOpen && editingCamera && (
+          <div style={styles.modalOverlay}>
+            <div style={styles.modalBox}>
+              <h3 style={styles.modalTitle}>แก้ไขข้อมูลกล้อง</h3>
               <form onSubmit={handleUpdate}>
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={labelStyle}>IP Address</label>
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>IP Address</label>
                   <input
                     type="text"
                     value={editingCamera.ip_address || ''}
                     onChange={(e) => setEditingCamera({ ...editingCamera, ip_address: e.target.value })}
-                    style={inputStyle}
+                    style={styles.input}
                     required
                   />
                 </div>
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={labelStyle}>Sub Location</label>
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>Sub Location</label>
                   <input
                     type="text"
                     value={editingCamera.sub_location}
                     onChange={(e) => setEditingCamera({ ...editingCamera, sub_location: e.target.value })}
-                    style={inputStyle}
+                    style={styles.input}
                     required
                   />
                 </div>
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={labelStyle}>Location</label>
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>Location</label>
                   <input
                     type="text"
                     value={editingCamera.location}
                     onChange={(e) => setEditingCamera({ ...editingCamera, location: e.target.value })}
-                    style={inputStyle}
+                    style={styles.input}
                     required
                   />
                 </div>
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={labelStyle}>Status</label>
+                <div style={styles.fieldGroupLast}>
+                  <label style={styles.label}>Status</label>
                   <select
                     value={editingCamera.status}
                     onChange={(e) => setEditingCamera({ ...editingCamera, status: e.target.value })}
-                    style={inputStyle}
+                    style={styles.input}
                   >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="maintenance">Maintenance</option>
+                    <option value={CAMERA_STATUS.ACTIVE}>Active</option>
+                    <option value={CAMERA_STATUS.INACTIVE}>Inactive</option>
+                    <option value={CAMERA_STATUS.MAINTENANCE}>Maintenance</option>
                   </select>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                  <button type="button" onClick={() => setIsEditModalOpen(false)} style={btnCancel}>ยกเลิก</button>
-                  <button type="submit" style={btnPrimary}>อัปเดตข้อมูล</button>
+                <div style={styles.modalActions}>
+                  <button type="button" onClick={() => setIsEditModalOpen(false)} style={styles.btnCancel}>ยกเลิก</button>
+                  <button type="submit" style={styles.btnPrimary}>อัปเดตข้อมูล</button>
                 </div>
               </form>
             </div>
           </div>
         )}
-
       </div>
     </MainLayout>
   );
 };
 
+const STATUS_BADGE_STYLES = {
+  active: { bg: '#dcfce7', color: '#15803d', label: 'Active' },
+  inactive: { bg: '#fee2e2', color: '#b91c1c', label: 'Inactive' },
+  maintenance: { bg: '#fef3c7', color: '#b45309', label: 'Maintenance' },
+};
+
 const StatusBadge = ({ status }) => {
-  const styles = {
-    active: { bg: '#dcfce7', color: '#15803d', label: 'Active' },
-    inactive: { bg: '#fee2e2', color: '#b91c1c', label: 'Inactive' },
-    maintenance: { bg: '#fef3c7', color: '#b45309', label: 'Maintenance' },
-  };
-  const current = styles[status] || styles.active;
+  const current = STATUS_BADGE_STYLES[status] || STATUS_BADGE_STYLES.inactive;
   return (
-    <span style={{ backgroundColor: current.bg, color: current.color, padding: '4px 12px', borderRadius: '9999px', fontSize: '12px', fontWeight: '600' }}>
+    <span
+      style={{
+        backgroundColor: current.bg,
+        color: current.color,
+        padding: '4px 12px',
+        borderRadius: '9999px',
+        fontSize: '12px',
+        fontWeight: '600',
+      }}
+    >
       {current.label}
     </span>
   );
@@ -394,10 +402,10 @@ const getCardStyle = (borderColor, isSelected, isHovered) => ({
   backgroundColor: '#fff',
   padding: '16px 20px',
   borderRadius: '12px',
-  boxShadow: isSelected 
-    ? `0 0 0 2px ${borderColor}, 0 4px 6px -1px rgba(0,0,0,0.1)` 
-    : isHovered 
-      ? '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)' 
+  boxShadow: isSelected
+    ? `0 0 0 2px ${borderColor}, 0 4px 6px -1px rgba(0,0,0,0.1)`
+    : isHovered
+      ? '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)'
       : '0 1px 3px rgba(0,0,0,0.1)',
   borderLeft: `5px solid ${borderColor}`,
   cursor: 'pointer',
@@ -406,36 +414,127 @@ const getCardStyle = (borderColor, isSelected, isHovered) => ({
   userSelect: 'none',
 });
 
-const cardTitleStyle = { fontSize: '13px', color: '#64748b', fontWeight: '500' };
-const cardNumStyle = { fontSize: '24px', fontWeight: 'bold', color: '#1e293b', marginTop: '4px' };
-const unitStyle = { fontSize: '13px', fontWeight: 'normal', color: '#64748b' };
+const styles = {
+  page: { padding: '8px' },
 
-const inputStyle = { padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', width: '100%', boxSizing: 'border-box' };
-const btnPrimary = { backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', height: '40px' };
+  header: { marginBottom: '24px' },
+  headerTitle: { fontSize: '24px', fontWeight: 'bold', color: '#1e293b', margin: 0 },
+  headerSubtitle: { color: '#64748b', fontSize: '14px', marginTop: '4px' },
 
-// ปุ่มรองสำหรับทดสอบการเชื่อมต่อ
-const btnSecondary = {
-  color: '#334155',
-  border: '1px solid #cbd5e1',
-  padding: '0 12px',
-  borderRadius: '6px',
-  cursor: 'pointer',
-  fontWeight: '500',
-  height: '40px',
-  fontSize: '13px',
-  whiteSpace: 'nowrap',
-  width: '100%',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  boxSizing: 'border-box',
+  summaryGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '16px',
+    marginBottom: '24px',
+  },
+  cardTitle: { fontSize: '13px', color: '#64748b', fontWeight: '500' },
+  cardNum: { fontSize: '24px', fontWeight: 'bold', color: '#1e293b', marginTop: '4px' },
+  unit: { fontSize: '13px', fontWeight: 'normal', color: '#64748b' },
+
+  formCard: {
+    backgroundColor: '#fff',
+    padding: '20px 24px',
+    borderRadius: '12px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    marginBottom: '24px',
+  },
+  formTitle: { fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: '#334155' },
+
+  // Grid ปรับให้สมดุล 4 ช่องเท่าๆ กัน
+  formGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '16px',
+    alignItems: 'end',
+  },
+
+  actionGroup: {
+    display: 'flex',
+    gap: '8px',
+  },
+
+  label: { display: 'block', fontSize: '13px', fontWeight: '500', color: '#475569', marginBottom: '6px' },
+  input: {
+    padding: '10px 14px',
+    borderRadius: '6px',
+    border: '1px solid #cbd5e1',
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
+    height: '40px',
+  },
+
+  btnPrimary: {
+    backgroundColor: '#2563eb',
+    color: '#fff',
+    border: 'none',
+    padding: '0 16px',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: '500',
+    height: '40px',
+    flex: 1,
+    whiteSpace: 'nowrap',
+  },
+  btnSecondary: {
+    color: '#334155',
+    border: '1px solid #cbd5e1',
+    padding: '0 12px',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: '500',
+    height: '40px',
+    fontSize: '13px',
+    whiteSpace: 'nowrap',
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxSizing: 'border-box',
+  },
+  btnEdit: { backgroundColor: '#f1f5f9', color: '#334155', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', marginRight: '8px' },
+  btnDelete: { backgroundColor: '#fef2f2', color: '#ef4444', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' },
+  btnCancel: { backgroundColor: '#e2e8f0', color: '#475569', border: 'none', padding: '10px 16px', borderRadius: '6px', cursor: 'pointer' },
+
+  tableCard: { backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' },
+  filterBar: {
+    padding: '12px 16px',
+    backgroundColor: '#f1f5f9',
+    borderBottom: '1px solid #e2e8f0',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  filterText: { fontSize: '13px', color: '#475569' },
+  filterClearBtn: { border: 'none', background: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '13px', fontWeight: '500' },
+
+  table: { width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' },
+  tableHeadRow: { backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' },
+  th: { padding: '16px' },
+  tableRow: { borderBottom: '1px solid #f1f5f9' },
+  td: { padding: '16px' },
+  tdMedium: { padding: '16px', fontWeight: '500' },
+  tdMono: { padding: '16px', fontFamily: 'monospace', color: '#64748b' },
+  tdMonoStrong: { padding: '16px', fontFamily: 'monospace', fontWeight: '600', color: '#1e293b' },
+  emptyState: { padding: '32px', textAlign: 'center', color: '#94a3b8' },
+
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  modalBox: { backgroundColor: '#fff', padding: '24px', borderRadius: '12px', width: '400px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' },
+  modalTitle: { marginTop: 0, marginBottom: '16px' },
+  modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px' },
+  fieldGroup: { marginBottom: '12px' },
+  fieldGroupLast: { marginBottom: '20px' },
 };
-
-const btnEdit = { backgroundColor: '#f1f5f9', color: '#334155', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', marginRight: '8px' };
-const btnDelete = { backgroundColor: '#fef2f2', color: '#ef4444', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' };
-const btnCancel = { backgroundColor: '#e2e8f0', color: '#475569', border: 'none', padding: '10px 16px', borderRadius: '6px', cursor: 'pointer' };
-const labelStyle = { display: 'block', fontSize: '13px', fontWeight: '500', color: '#475569', marginBottom: '6px' };
-const modalOverlay = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 };
-const modalBox = { backgroundColor: '#fff', padding: '24px', borderRadius: '12px', width: '400px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' };
 
 export default CameraManagement;

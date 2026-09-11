@@ -16,12 +16,10 @@ type User struct {
 	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
 
-// TableName กำหนดชื่อตารางใน Database
 func (User) TableName() string {
 	return "users"
 }
 
-// BeforeCreate จะถูกเรียกใช้อัตโนมัติเพื่อเจน UUID ก่อน Insert ลงฐานข้อมูล
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	if u.ID == "" {
 		u.ID = uuid.New().String()

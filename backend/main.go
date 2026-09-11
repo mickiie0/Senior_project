@@ -43,8 +43,7 @@ func ConnectDB() {
 func main() {
 	ConnectDB()
 
-	// Auto Migrate ตารางทั้งหมด
-	if err := DB.AutoMigrate(&auth.User{}, &camera.Camera{}, &detection.DetectionEvent{}); err != nil {
+	if err := DB.AutoMigrate(&auth.User{}, &camera.Camera{}, &detection.DetectionEvent{}, &detection.EventDetail{}); err != nil {
 		log.Fatalf("Failed to auto migrate database tables: %v", err)
 	}
 
@@ -60,8 +59,10 @@ func main() {
 
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
-	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
+	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-API-Key"}
 	r.Use(cors.New(config))
+
+	r.Static("/uploads", "./uploads")
 
 	// Auth Module
 	repo := auth.NewRepository(DB)
@@ -85,13 +86,12 @@ func main() {
 		authGroup.POST("/login", handler.Login)
 	}
 
-	// Public API Endpoints (ไม่ต้องผ่าน Authentication Middleware)
-	publicApi := r.Group("/api")
+	cameraApi := r.Group("/api")
+	cameraApi.Use(auth.CameraMiddleware())
 	{
-		publicApi.POST("/detections", detectionHandler.ReceiveEvent)
+		cameraApi.POST("/detections", detectionHandler.ReceiveEvent)
 	}
 
-	// Protected API Endpoints (ต้องผ่าน Authentication Middleware)
 	api := r.Group("/api")
 	api.Use(auth.AuthMiddleware(jwtSecret))
 	{
@@ -108,6 +108,8 @@ func main() {
 				"role":     role,
 			})
 		})
+		
+		api.GET("/detections", detectionHandler.GetAll)
 
 		cameras := api.Group("/cameras")
 		cameras.Use(auth.RequireRole("admin"))

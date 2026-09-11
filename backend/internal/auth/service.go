@@ -32,7 +32,7 @@ func (s *Service) Register(req RegisterRequest) error {
 		Username:     req.Username,
 		Email:        req.Email,
 		PasswordHash: string(hash),
-		Role:         "user", // สามารถรับมาจาก dynamic request ได้หากต้องการ
+		Role:         "user",
 	}
 
 	return s.repo.Create(&user)

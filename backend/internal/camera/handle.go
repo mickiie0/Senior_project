@@ -19,7 +19,6 @@ type TestIPInput struct {
 	IPAddress string `json:"ip_address" binding:"required,ip"`
 }
 
-// TestConnection เพิ่ม Handler สำหรับปุ่ม "ทดสอบ IP" จากหน้า React
 func (h *Handler) TestConnection(c *gin.Context) {
 	var input TestIPInput
 	if err := c.ShouldBindJSON(&input); err != nil {

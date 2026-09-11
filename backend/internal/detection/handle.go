@@ -37,3 +37,13 @@ func (h *Handler) ReceiveEvent(c *gin.Context) {
 		"event_id": event.EventID,
 	})
 }
+
+func (h *Handler) GetAll(c *gin.Context) {
+	events, err := h.service.GetAllEvents()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch detection events"})
+		return
+	}
+
+	c.JSON(http.StatusOK, events)
+}

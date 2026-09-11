@@ -22,15 +22,9 @@ func NewService(repo Repository) Service {
 }
 
 func (s *service) CreateCamera(input CreateCameraInput) (*Camera, error) {
-	status := input.Status
-
-	// ถ้าผู้ใช้ไม่ได้เลือก status มาจากฟอร์ม ให้ทดสอบ Ping สัญญาณ IP ล่วงหน้าทันที 2 วินาที
-	if status == "" {
-		if input.IPAddress != "" && PingReCamera(input.IPAddress, 2*time.Second) {
-			status = "active"
-		} else {
-			status = "inactive"
-		}
+	status := "inactive"
+	if input.IPAddress != "" && PingReCamera(input.IPAddress, 2*time.Second) {
+		status = "active"
 	}
 
 	cam := &Camera{

@@ -1,39 +1,77 @@
 package detection
 
 import (
+	"fmt"
 	"time"
 
 	"fire_detection_web_app/internal/camera"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-// DetectionEvent โครงสร้างตารางสำหรับเก็บประวัติการตรวจจับจากกล้อง
 type DetectionEvent struct {
-	EventID       string        `gorm:"type:uuid;primaryKey" json:"event_id"`
-	CameraID      string        `gorm:"type:uuid;not null" json:"camera_id"`
-	Camera        camera.Camera `gorm:"foreignKey:CameraID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;" json:"-"`
-	DetectionType string        `gorm:"type:varchar(50);not null" json:"detection_type"`
-	Confidence    float64       `gorm:"not null" json:"confidence"`
-	CreatedAt     time.Time     `gorm:"autoCreateTime" json:"created_at"`
+	EventID   string        `gorm:"type:varchar(20);primaryKey" json:"event_id"`
+	CameraID  string        `gorm:"type:varchar(20);not null" json:"camera_id"`
+	Camera    camera.Camera `gorm:"foreignKey:CameraID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;" json:"-"`
+	ImageURL  string        `gorm:"type:varchar(255)" json:"image_url"`
+	CreatedAt time.Time     `gorm:"autoCreateTime" json:"created_at"`
+
+	Details []EventDetail `gorm:"foreignKey:EventID;references:EventID" json:"details"`
 }
 
 func (DetectionEvent) TableName() string {
 	return "detection_events"
 }
 
-// BeforeCreate จะถูกเรียกใช้อัตโนมัติเพื่อสร้าง UUID ก่อน Insert ลงฐานข้อมูล
 func (e *DetectionEvent) BeforeCreate(tx *gorm.DB) (err error) {
-	if e.EventID == "" {
-		e.EventID = uuid.New().String()
+	if e.EventID != "" {
+		return nil
 	}
-	return
+
+	var lastEvent DetectionEvent
+	err = tx.Unscoped().
+		Where("event_id LIKE ?", "EVT-%").
+		Order("event_id DESC").
+		First(&lastEvent).Error
+
+	nextSeq := 1
+
+	if err == nil && len(lastEvent.EventID) > 4 {
+		var currentSeq int
+		fmt.Sscanf(lastEvent.EventID[4:], "%d", &currentSeq)
+		nextSeq = currentSeq + 1
+	}
+
+	e.EventID = fmt.Sprintf("EVT-%06d", nextSeq)
+	return nil
 }
 
-// CreateEventInput Struct สำหรับรับ Payload JSON จากกล้อง reCamera
-type CreateEventInput struct {
-	CameraID      string  `json:"camera_id" binding:"required,uuid"`
+type EventDetail struct {
+	ID            uint    `gorm:"primaryKey" json:"id"`
+	EventID       string  `gorm:"type:varchar(20);not null;index" json:"event_id"`
+	DetectionType string  `gorm:"type:varchar(50);not null" json:"detection_type"`
+	Confidence    float64 `gorm:"not null" json:"confidence"`
+	XMin          float64 `gorm:"type:decimal(10,4)" json:"xmin"`
+	YMin          float64 `gorm:"type:decimal(10,4)" json:"ymin"`
+	XMax          float64 `gorm:"type:decimal(10,4)" json:"xmax"`
+	YMax          float64 `gorm:"type:decimal(10,4)" json:"ymax"`
+}
+
+func (EventDetail) TableName() string {
+	return "event_details"
+}
+
+type BBoxInput struct {
 	DetectionType string  `json:"detection_type" binding:"required"`
-	Confidence    float64 `json:"confidence" binding:"required"`
+	Confidence    float64 `json:"confidence"`
+	XMin          float64 `json:"xmin"`
+	YMin          float64 `json:"ymin"`
+	XMax          float64 `json:"xmax"`
+	YMax          float64 `json:"ymax"`
+}
+
+type CreateEventInput struct {
+	CameraID    string      `json:"camera_id" binding:"required"`
+	ImageBase64 string      `json:"image_base64"`
+	Detections  []BBoxInput `json:"detections" binding:"required"`
 }

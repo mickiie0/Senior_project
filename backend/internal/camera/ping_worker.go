@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// StartPingWorker เริ่มต้นรัน Background Worker สำหรับตรวจเช็กสถานะกล้อง
 func StartPingWorker(db *gorm.DB, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 
@@ -22,7 +21,6 @@ func StartPingWorker(db *gorm.DB, interval time.Duration) {
 func checkAllCameras(db *gorm.DB) {
 	var cameras []Camera
 
-	// ดึงข้อมูลกล้องทั้งหมดที่ไม่ใช่สถานะส่งซ่อม (maintenance)
 	if err := db.Where("status != ?", "maintenance").Find(&cameras).Error; err != nil {
 		log.Println("[Ping Worker] Error fetching cameras:", err)
 		return
@@ -33,7 +31,6 @@ func checkAllCameras(db *gorm.DB) {
 			continue
 		}
 
-		// รัน Goroutine ตรวจสอบกล้องแต่ละตัวพร้อมกันแบบขนาน
 		go func(c Camera) {
 			isAlive := PingReCamera(c.IPAddress, 2*time.Second)
 
@@ -42,18 +39,18 @@ func checkAllCameras(db *gorm.DB) {
 				newStatus = "inactive"
 			}
 
-			// อัปเดตลง Database เฉพาะกรณีที่สถานะเปลี่ยนแปลงจากเดิม
 			if c.Status != newStatus {
 				err := db.Model(&Camera{}).Where("id = ?", c.ID).Update("status", newStatus).Error
 				if err == nil {
 					log.Printf("[Ping Worker] Camera %s (%s) status changed to %s\n", c.ID, c.IPAddress, newStatus)
+				} else {
+					log.Printf("[Ping Worker] Failed to update camera %s status: %v\n", c.ID, err)
 				}
 			}
 		}(cam)
 	}
 }
 
-// PingReCamera เปลี่ยนเป็น Public Function (ตัว P พิมพ์ใหญ่) เพื่อให้ service และ handler เรียกใช้ได้
 func PingReCamera(ip string, timeout time.Duration) bool {
 	ports := []string{
 		"80",   // HTTP / Web Dashboard
@@ -67,9 +64,9 @@ func PingReCamera(ip string, timeout time.Duration) bool {
 		conn, err := net.DialTimeout("tcp", address, timeout)
 		if err == nil {
 			_ = conn.Close()
-			return true // เชื่อมต่อได้ แสดงว่ากล้องทำงานอยู่
+			return true
 		}
 	}
 
-	return false // เชื่อมต่อไม่ได้เลย แสดงว่ากล้องดับหรือหลุด
+	return false
 }

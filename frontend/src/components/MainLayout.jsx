@@ -65,7 +65,8 @@ const MainLayout = ({ title, children, username = 'User', userRole = 'user' }) =
       <div style={layoutStyles.mainContent}>
         {/* Header */}
         <header style={layoutStyles.header}>
-          <h1 style={layoutStyles.headerTitle}>{title}</h1>
+          {/* ลบ <h1>{title}</h1> ออกแล้ว */}
+          <div></div>
 
           <div style={layoutStyles.headerRight}>
             {/* ปุ่มผู้ใช้ขวาบน แสดง Username */}
@@ -194,12 +195,6 @@ const layoutStyles = {
     justifyContent: 'space-between',
     padding: '0 36px',
     borderBottom: '1px solid #e2e8f0',
-  },
-  headerTitle: {
-    fontSize: '22px',
-    fontWeight: '700',
-    color: '#0f172a',
-    margin: 0,
   },
   headerRight: {
     display: 'flex',

@@ -9,6 +9,7 @@ import (
 type Repository interface {
 	ExistsCamera(cameraID string) (bool, error)
 	CreateEvent(event *DetectionEvent) error
+	GetAllEvents() ([]DetectionEvent, error)
 }
 
 type repository struct {
@@ -19,7 +20,6 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db: db}
 }
 
-// ExistsCamera ตรวจสอบว่า camera_id มีอยู่ในตาราง cameras หรือไม่
 func (r *repository) ExistsCamera(cameraID string) (bool, error) {
 	var count int64
 	err := r.db.Model(&camera.Camera{}).Where("id = ?", cameraID).Count(&count).Error
@@ -31,4 +31,10 @@ func (r *repository) ExistsCamera(cameraID string) (bool, error) {
 
 func (r *repository) CreateEvent(e *DetectionEvent) error {
 	return r.db.Create(e).Error
+}
+
+func (r *repository) GetAllEvents() ([]DetectionEvent, error) {
+	var events []DetectionEvent
+	err := r.db.Preload("Details").Order("created_at DESC").Find(&events).Error
+	return events, err
 }
