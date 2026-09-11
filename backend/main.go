@@ -110,16 +110,17 @@ func main() {
 		})
 		
 		api.GET("/detections", detectionHandler.GetAll)
+		api.GET("/detections/recent-detections", detectionHandler.GetAll)
 
 		cameras := api.Group("/cameras")
-		cameras.Use(auth.RequireRole("admin"))
 		{
-			cameras.POST("/test-ip", camHandler.TestConnection)
-			cameras.POST("", camHandler.Create)
 			cameras.GET("", camHandler.GetAll)
 			cameras.GET("/:id", camHandler.GetByID)
-			cameras.PUT("/:id", camHandler.Update)
-			cameras.DELETE("/:id", camHandler.Delete)
+
+			cameras.POST("/test-ip", auth.RequireRole("admin"), camHandler.TestConnection)
+			cameras.POST("", auth.RequireRole("admin"), camHandler.Create)
+			cameras.PUT("/:id", auth.RequireRole("admin"), camHandler.Update)
+			cameras.DELETE("/:id", auth.RequireRole("admin"), camHandler.Delete)
 		}
 	}
 

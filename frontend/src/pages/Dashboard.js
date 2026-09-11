@@ -179,33 +179,39 @@ const Dashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {recentDetections.slice(0, 5).map((item, index) => (
-                      <tr key={item.event_id || index} style={styles.tableRow}>
-                        <td style={styles.td}>
-                          <span
-                            style={{
-                              padding: '4px 12px',
-                              borderRadius: '9999px',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              backgroundColor: item.detection_type === 'fire' ? '#fee2e2' : '#f1f5f9',
-                              color: item.detection_type === 'fire' ? '#b91c1c' : '#475569',
-                            }}
-                          >
-                            {item.detection_type?.toUpperCase()}
-                          </span>
-                        </td>
-                        <td style={styles.tdMedium}>
-                          {typeof item.confidence === 'number' ? `${(item.confidence * 100).toFixed(1)}%` : '-'}
-                        </td>
-                        <td style={styles.tdMono}>
-                          {item.camera_id ? item.camera_id : '-'}
-                        </td>
-                        <td style={styles.td}>
-                          {item.created_at ? new Date(item.created_at).toLocaleTimeString() : '-'}
-                        </td>
-                      </tr>
-                    ))}
+                    {recentDetections.slice(0, 5).map((item, index) => {
+                      const detectionType = item.detection_type || item.details?.[0]?.detection_type || '-';
+                      const rawConf = typeof item.confidence === 'number' ? item.confidence : item.details?.[0]?.confidence;
+                      const isFire = detectionType.toLowerCase() === 'fire';
+
+                      return (
+                        <tr key={item.event_id || index} style={styles.tableRow}>
+                          <td style={styles.td}>
+                            <span
+                              style={{
+                                padding: '4px 12px',
+                                borderRadius: '9999px',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                backgroundColor: isFire ? '#fee2e2' : '#f1f5f9',
+                                color: isFire ? '#b91c1c' : '#475569',
+                              }}
+                            >
+                              {detectionType.toUpperCase()}
+                            </span>
+                          </td>
+                          <td style={styles.tdMedium}>
+                            {typeof rawConf === 'number' ? `${(rawConf * 100).toFixed(1)}%` : '-'}
+                          </td>
+                          <td style={styles.tdMono}>
+                            {item.camera_id ? item.camera_id : '-'}
+                          </td>
+                          <td style={styles.td}>
+                            {item.created_at ? new Date(item.created_at).toLocaleTimeString() : '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
