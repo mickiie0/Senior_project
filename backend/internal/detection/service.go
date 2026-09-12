@@ -32,35 +32,33 @@ func (s *service) ProcessEvent(input CreateEventInput) (*DetectionEvent, error) 
 		return nil, errors.New("camera_id not found in system")
 	}
 
-	// 1. แปลงภาพ Base64 เซฟลงโฟลเดอร์ ./uploads
-	var imageURL string
-	if input.ImageBase64 != "" {
-		savedPath, err := saveBase64Image(input.ImageBase64)
-		if err == nil {
-			imageURL = savedPath
-		}
-	}
-
 	var details []EventDetail
 	for _, d := range input.Detections {
 		details = append(details, EventDetail{
 			DetectionType: d.DetectionType,
 			Confidence:    d.Confidence,
-			XMin:          d.XMin,
-			YMin:          d.YMin,
-			XMax:          d.XMax,
-			YMax:          d.YMax,
+			BoxCenterX:    d.BoxCenterX,
+			BoxCenterY:    d.BoxCenterY,
+			BoxWidth:      d.BoxWidth,
+			BoxHeight:     d.BoxHeight,
 		})
 	}
 
 	event := &DetectionEvent{
 		CameraID: input.CameraID,
-		ImageURL: imageURL,
 		Details:  details,
 	}
 
 	if err := s.repo.CreateEvent(event); err != nil {
 		return nil, err
+	}
+
+	if input.ImageBase64 != "" {
+		savedPath, err := saveBase64Image(input.ImageBase64, event.EventID, event.CreatedAt)
+		if err == nil {
+			event.ImageURL = savedPath
+			_ = s.repo.UpdateImageURL(event.EventID, savedPath)
+		}
 	}
 
 	return event, nil
@@ -70,7 +68,7 @@ func (s *service) GetAllEvents() ([]DetectionEvent, error) {
 	return s.repo.GetAllEvents()
 }
 
-func saveBase64Image(base64Data string) (string, error) {
+func saveBase64Image(base64Data string, eventID string, createdAt time.Time) (string, error) {
 	if idx := strings.Index(base64Data, ","); idx != -1 {
 		base64Data = base64Data[idx+1:]
 	}
@@ -80,13 +78,10 @@ func saveBase64Image(base64Data string) (string, error) {
 		return "", err
 	}
 
-	uploadDir := "./uploads"
-	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
-		return "", err
-	}
-
-	filename := fmt.Sprintf("evt_%d.jpg", time.Now().UnixNano())
-	filePath := filepath.Join(uploadDir, filename)
+	timeStr := createdAt.Format("2006-01-02_150405")
+	
+	filename := fmt.Sprintf("%s_%s.jpg", eventID, timeStr)
+	filePath := filepath.Join("./uploads", filename)
 
 	if err := os.WriteFile(filePath, unbased, 0644); err != nil {
 		return "", err

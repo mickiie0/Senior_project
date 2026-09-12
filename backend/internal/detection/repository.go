@@ -10,6 +10,7 @@ type Repository interface {
 	ExistsCamera(cameraID string) (bool, error)
 	CreateEvent(event *DetectionEvent) error
 	GetAllEvents() ([]DetectionEvent, error)
+	UpdateImageURL(eventID string, imageURL string) error // 👈 เพิ่มลงใน Interface
 }
 
 type repository struct {
@@ -37,4 +38,8 @@ func (r *repository) GetAllEvents() ([]DetectionEvent, error) {
 	var events []DetectionEvent
 	err := r.db.Preload("Details").Order("created_at DESC").Find(&events).Error
 	return events, err
+}
+
+func (r *repository) UpdateImageURL(eventID string, imageURL string) error {
+	return r.db.Model(&DetectionEvent{}).Where("event_id = ?", eventID).Update("image_url", imageURL).Error
 }

@@ -43,6 +43,9 @@ services:
       DB_PASSWORD: password
       DB_NAME: fire_detection
 
+    volumes:
+      - ./uploads:/app/uploads
+
   frontend:
     build: ./frontend
 
