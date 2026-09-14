@@ -9,6 +9,9 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
       POSTGRES_DB: fire_detection
+      TZ: Asia/Bangkok
+    
+    command: postgres -c timezone=Asia/Bangkok
 
     ports:
       - "5432:5432"
@@ -42,9 +45,10 @@ services:
       DB_USER: admin
       DB_PASSWORD: password
       DB_NAME: fire_detection
+      DATABASE_URL: postgres://admin:password@postgres:5432/fire_detection?sslmode=disable&TimeZone=Asia/Bangkok
 
     volumes:
-      - ./uploads:/app/uploads
+      - ./backend/uploads:/app/uploads
 
   frontend:
     build: ./frontend

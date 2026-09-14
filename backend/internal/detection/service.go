@@ -78,7 +78,13 @@ func saveBase64Image(base64Data string, eventID string, createdAt time.Time) (st
 		return "", err
 	}
 
-	timeStr := createdAt.Format("2006-01-02_150405")
+	loc, err := time.LoadLocation("Asia/Bangkok")
+	if err != nil {
+		loc = time.FixedZone("ICT", 7*3600)
+	}
+
+	localTime := createdAt.In(loc)
+	timeStr := localTime.Format("2006-01-02_15-04-05")
 	
 	filename := fmt.Sprintf("%s_%s.jpg", eventID, timeStr)
 	filePath := filepath.Join("./uploads", filename)

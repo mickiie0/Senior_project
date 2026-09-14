@@ -10,7 +10,7 @@ type Repository interface {
 	ExistsCamera(cameraID string) (bool, error)
 	CreateEvent(event *DetectionEvent) error
 	GetAllEvents() ([]DetectionEvent, error)
-	UpdateImageURL(eventID string, imageURL string) error // 👈 เพิ่มลงใน Interface
+	UpdateImageURL(eventID string, imageURL string) error
 }
 
 type repository struct {
