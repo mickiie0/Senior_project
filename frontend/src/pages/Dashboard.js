@@ -63,7 +63,7 @@ const Dashboard = () => {
     try {
       const [camRes, detectRes] = await Promise.allSettled([
         axios.get(`${API_BASE_URL}/cameras`, getAuthHeaders()),
-        axios.get(`${API_BASE_URL}/detections/recent-detections`, getAuthHeaders()),
+        axios.get(`${API_BASE_URL}/detections`, getAuthHeaders()),
       ]);
 
       if (isAuthError(camRes) || isAuthError(detectRes)) {
