@@ -5,7 +5,6 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import EventHistory from './pages/EventHistory';
-import Statistics from './pages/Statistics';
 import CameraManagement from './pages/CameraManagement';
 
 const App = () => {
@@ -16,7 +15,6 @@ const App = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/events" element={<EventHistory />} />
-        <Route path="/statistics" element={<Statistics />} />
         <Route path="/cameras" element={<CameraManagement />} />
       </Routes>
     </BrowserRouter>
