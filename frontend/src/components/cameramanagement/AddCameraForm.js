@@ -1,0 +1,128 @@
+import React from 'react';
+import { Plus, Wifi, MapPin, CheckCircle2, AlertTriangle, X } from 'lucide-react';
+import styles from './CameraManagementStyles';
+
+const AddCameraForm = ({
+  createData,
+  onCreateDataChange,
+  onSubmit,
+  isSubmitting,
+  isTestingIP,
+  onTestConnection,
+  testResult,
+  onClearTestResult,
+}) => {
+  return (
+    <div style={styles.formCard} className="dash-card">
+      <div style={styles.formCardHeader}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={styles.formIconWrapper}>
+            <Plus size={16} color="#2563eb" />
+          </div>
+          <h3 style={styles.formTitle}>เพิ่มกล้องวงจรปิดใหม่เข้าสู่ระบบ</h3>
+        </div>
+      </div>
+
+      <form onSubmit={onSubmit} style={styles.formContent}>
+        <div style={styles.formGrid}>
+          {/* IP Address */}
+          <div style={styles.fieldItem}>
+            <label style={styles.label}>IP Address ของกล้อง</label>
+            <div style={styles.inputWrapper}>
+              <Wifi size={15} color="#94a3b8" style={styles.inputIcon} />
+              <input
+                type="text"
+                placeholder="เช่น 192.168.1.100"
+                value={createData.ip_address}
+                onChange={(e) => onCreateDataChange({ ...createData, ip_address: e.target.value })}
+                required
+                disabled={isSubmitting}
+                style={styles.inputWithIcon}
+                className="cam-input"
+              />
+            </div>
+          </div>
+
+          {/* Location (Building) */}
+          <div style={styles.fieldItem}>
+            <label style={styles.label}>อาคาร / บริเวณ (Location)</label>
+            <div style={styles.inputWrapper}>
+              <MapPin size={15} color="#94a3b8" style={styles.inputIcon} />
+              <input
+                type="text"
+                placeholder="เช่น อาคาร A"
+                value={createData.location}
+                onChange={(e) => onCreateDataChange({ ...createData, location: e.target.value })}
+                required
+                disabled={isSubmitting}
+                style={styles.inputWithIcon}
+                className="cam-input"
+              />
+            </div>
+          </div>
+
+          {/* Sub Location */}
+          <div style={styles.fieldItem}>
+            <label style={styles.label}>จุดติดตั้งย่อย (Sub Location)</label>
+            <div style={styles.inputWrapper}>
+              <MapPin size={15} color="#94a3b8" style={styles.inputIcon} />
+              <input
+                type="text"
+                placeholder="เช่น ชั้น 2 ห้องโถง"
+                value={createData.sub_location}
+                onChange={(e) => onCreateDataChange({ ...createData, sub_location: e.target.value })}
+                required
+                disabled={isSubmitting}
+                style={styles.inputWithIcon}
+                className="cam-input"
+              />
+            </div>
+          </div>
+
+          {/* Actions: Test IP & Submit */}
+          <div style={styles.actionCol}>
+            <button
+              type="button"
+              onClick={onTestConnection}
+              disabled={isTestingIP || isSubmitting}
+              style={styles.btnSecondary}
+              title="ทดสอบ Ping การเชื่อมต่อเครือข่าย"
+            >
+              <Wifi size={14} className={isTestingIP ? 'spin-icon' : ''} />
+              <span>{isTestingIP ? 'กำลังทดสอบ...' : 'ทดสอบ IP'}</span>
+            </button>
+
+            <button type="submit" disabled={isSubmitting} style={styles.btnPrimary}>
+              <Plus size={15} />
+              <span>{isSubmitting ? 'กำลังบันทึก...' : 'บันทึกกล้อง'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* IP Test Feedback Banner */}
+        {testResult && (
+          <div
+            style={{
+              ...styles.testResultBox,
+              backgroundColor: testResult.success ? '#f0fdf4' : '#fef2f2',
+              borderColor: testResult.success ? '#bbf7d0' : '#fecaca',
+              color: testResult.success ? '#166534' : '#991b1b',
+            }}
+          >
+            {testResult.success ? (
+              <CheckCircle2 size={16} color="#16a34a" />
+            ) : (
+              <AlertTriangle size={16} color="#dc2626" />
+            )}
+            <span>{testResult.message}</span>
+            <button type="button" onClick={onClearTestResult} style={styles.closeTestResultBtn}>
+              <X size={13} />
+            </button>
+          </div>
+        )}
+      </form>
+    </div>
+  );
+};
+
+export default AddCameraForm;
