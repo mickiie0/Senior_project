@@ -21,7 +21,7 @@ func StartPingWorker(db *gorm.DB, interval time.Duration) {
 func checkAllCameras(db *gorm.DB) {
 	var cameras []Camera
 
-	if err := db.Where("status != ?", "maintenance").Find(&cameras).Error; err != nil {
+	if err := db.Find(&cameras).Error; err != nil {
 		log.Println("[Ping Worker] Error fetching cameras:", err)
 		return
 	}

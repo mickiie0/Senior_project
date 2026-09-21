@@ -73,7 +73,6 @@ const EditCameraModal = ({ isOpen, editingCamera, onChange, onSubmit, onClose })
                 className="cam-input"
               >
                 <option value={CAMERA_STATUS.ACTIVE}>Active</option>
-                <option value={CAMERA_STATUS.MAINTENANCE}>Maintenance</option>
                 <option value={CAMERA_STATUS.INACTIVE}>Inactive</option>
               </select>
             </div>

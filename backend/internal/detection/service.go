@@ -8,6 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"fire_detection_web_app/internal/notification"
+	"fire_detection_web_app/internal/sse"
 )
 
 type Service interface {
@@ -16,11 +19,17 @@ type Service interface {
 }
 
 type service struct {
-	repo Repository
+	repo    Repository
+	hub     *sse.Hub
+	discord notification.DiscordService
 }
 
-func NewService(repo Repository) Service {
-	return &service{repo: repo}
+func NewService(repo Repository, hub *sse.Hub, discord notification.DiscordService) Service {
+	return &service{
+		repo:    repo,
+		hub:     hub,
+		discord: discord,
+	}
 }
 
 func (s *service) ProcessEvent(input CreateEventInput) (*DetectionEvent, error) {
@@ -58,6 +67,46 @@ func (s *service) ProcessEvent(input CreateEventInput) (*DetectionEvent, error) 
 		if err == nil {
 			event.ImageURL = savedPath
 			_ = s.repo.UpdateImageURL(event.EventID, savedPath)
+		}
+	}
+
+	if s.hub != nil {
+		s.hub.Broadcast("new_detection", event)
+	}
+
+	if s.discord != nil {
+		hasAlert := false
+		var topDetection EventDetail
+		for _, d := range details {
+			lower := strings.ToLower(d.DetectionType)
+			if strings.Contains(lower, "fire") || strings.Contains(lower, "smoke") {
+				hasAlert = true
+				if d.Confidence >= topDetection.Confidence {
+					topDetection = d
+				}
+			}
+		}
+
+		if hasAlert {
+			cam, _ := s.repo.GetCamera(event.CameraID)
+			camLocation := ""
+			camSubLocation := ""
+			if cam != nil {
+				camLocation = cam.Location
+				camSubLocation = cam.SubLocation
+			}
+
+			s.discord.SendFireAlertAsync(notification.EventAlertData{
+				EventID:       event.EventID,
+				CameraID:      event.CameraID,
+				CameraName:    event.CameraID,
+				Location:      camLocation,
+				SubLocation:   camSubLocation,
+				DetectionType: topDetection.DetectionType,
+				Confidence:    topDetection.Confidence,
+				ImageURL:      event.ImageURL,
+				CreatedAt:     event.CreatedAt,
+			})
 		}
 	}
 

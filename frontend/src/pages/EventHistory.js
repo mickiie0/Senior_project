@@ -199,6 +199,9 @@ const EventHistory = () => {
     setEndDate('');
   };
 
+  // AI confidence scores are only shown to admin users
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+
   return (
     <MainLayout title="Event History" username={user?.username || 'User'} userRole={user?.role || 'user'}>
       <EventHistoryGlobalStyles />
@@ -249,12 +252,14 @@ const EventHistory = () => {
           onPageChange={setCurrentPage}
           onSelectEvent={setSelectedEvent}
           onResetFilters={handleResetFilters}
+          isAdmin={isAdmin}
         />
 
         <EventDetailModal
           selectedEvent={selectedEvent}
           camerasMap={camerasMap}
           onClose={() => setSelectedEvent(null)}
+          isAdmin={isAdmin}
         />
       </div>
     </MainLayout>

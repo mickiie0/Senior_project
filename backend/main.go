@@ -4,6 +4,8 @@ import (
 	"fire_detection_web_app/internal/auth"
 	"fire_detection_web_app/internal/camera"
 	"fire_detection_web_app/internal/detection"
+	"fire_detection_web_app/internal/notification"
+	"fire_detection_web_app/internal/sse"
 
 	"log"
 	"net/http"
@@ -43,7 +45,7 @@ func ConnectDB() {
 func main() {
 	ConnectDB()
 
-	if err := DB.AutoMigrate(&auth.User{}, &camera.Camera{}, &detection.DetectionEvent{}, &detection.EventDetail{}); err != nil {
+	if err := DB.AutoMigrate(&auth.User{}, &camera.Camera{}, &detection.DetectionEvent{}, &detection.EventDetail{}, &notification.NotificationLog{}); err != nil {
 		log.Fatalf("Failed to auto migrate database tables: %v", err)
 	}
 
@@ -75,10 +77,22 @@ func main() {
 	camService := camera.NewService(camRepo)
 	camHandler := camera.NewHandler(camService)
 
+	// Notification & Discord Module
+	discordWebhookURL := viper.GetString("DISCORD_WEBHOOK_URL")
+	if discordWebhookURL == "" {
+		discordWebhookURL = "https://discord.com/api/webhooks/1551643769940607158/fSIdxTPpRPlT1KqHPZSjez8CkUdF3Xu0jOQKkPNJnE-4oHvkPAeqNVits7WUgj-Tenqc"
+	}
+	notifRepo := notification.NewRepository(DB)
+	discordService := notification.NewDiscordService(discordWebhookURL, notifRepo)
+	notifHandler := notification.NewHandler(notifRepo, discordService)
+
+	// SSE Real-time Hub
+	sseHub := sse.NewHub()
+
 	// Detection Module
 	detectionRepo := detection.NewRepository(DB)
-	detectionService := detection.NewService(detectionRepo)
-	detectionHandler := detection.NewHandler(detectionService)
+	detectionService := detection.NewService(detectionRepo, sseHub, discordService)
+	detectionHandler := detection.NewHandler(detectionService, sseHub)
 
 	authGroup := r.Group("/auth")
 	{
@@ -108,10 +122,14 @@ func main() {
 				"role":     role,
 			})
 		})
-		
+		api.PATCH("/me/change-password", handler.ChangePassword)
+
 		api.GET("/detections", detectionHandler.GetAll)
+		api.GET("/events/stream", detectionHandler.StreamEvents)
 		api.GET("/cameras", camHandler.GetAll)
 		api.GET("/cameras/:id", camHandler.GetByID)
+		api.GET("/notifications/logs", notifHandler.GetLogs)
+		api.POST("/notifications/test-discord", notifHandler.TestDiscord)
 
 		adminCameras := api.Group("/cameras")
 		adminCameras.Use(auth.RequireRole("admin"))

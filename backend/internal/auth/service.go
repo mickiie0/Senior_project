@@ -62,3 +62,27 @@ func (s *Service) Login(req LoginRequest) (string, error) {
 
 	return token, nil
 }
+
+func (s *Service) ChangePassword(userID, currentPassword, newPassword string) error {
+	user, err := s.repo.FindByID(userID)
+	if err != nil {
+		return errors.New("ไม่พบบัญชีผู้ใช้งาน")
+	}
+
+	// Verify current password
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(currentPassword))
+	if err != nil {
+		return errors.New("รหัสผ่านปัจจุบันไม่ถูกต้อง")
+	}
+
+	if len(newPassword) < 6 {
+		return errors.New("รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร")
+	}
+
+	newHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.UpdatePassword(userID, string(newHash))
+}

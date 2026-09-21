@@ -140,14 +140,16 @@ const CameraManagement = () => {
 
     setIsSubmitting(true);
     try {
-      await axios.post(`${API_BASE_URL}/cameras`, createData, getAuthHeaders());
+      const res = await axios.post(`${API_BASE_URL}/cameras`, createData, getAuthHeaders());
       setCreateData({ ip_address: '', sub_location: '', location: '' });
-      setTestResult(null);
+      setTestResult({
+        success: true,
+        message: `เพิ่มกล้องสำเร็จ รหัสกล้อง: ${res.data.camera_id} (สถานะ: ${res.data.status})`,
+      });
       await fetchCameras();
-      alert('เพิ่มกล้องใหม่สำเร็จเรียบร้อย');
     } catch (err) {
       const msg = err.response?.data?.error || 'เกิดข้อผิดพลาดในการเพิ่มกล้อง';
-      alert(`ไม่สามารถเพิ่มกล้องได้: ${msg}`);
+      setTestResult({ success: false, message: `ไม่สามารถเพิ่มกล้องได้: ${msg}` });
     } finally {
       setIsSubmitting(false);
     }
@@ -191,9 +193,22 @@ const CameraManagement = () => {
   // Metrics
   const totalCount = cameras.length;
   const activeCount = cameras.filter((c) => c.status === CAMERA_STATUS.ACTIVE).length;
-  const maintenanceCount = cameras.filter((c) => c.status === CAMERA_STATUS.MAINTENANCE).length;
   const inactiveCount = cameras.filter((c) => c.status === CAMERA_STATUS.INACTIVE).length;
   const uptimePercent = totalCount > 0 ? Math.round((activeCount / totalCount) * 100) : 0;
+
+  // Preview of the camera_id that will likely be assigned on create
+  // (mirrors the backend's BeforeCreate logic: highest existing "CAM-xxx" + 1)
+  const nextCameraIdPreview = useMemo(() => {
+    let maxSeq = 0;
+    cameras.forEach((cam) => {
+      const id = cam.camera_id || '';
+      if (id.startsWith('CAM-')) {
+        const seq = parseInt(id.slice(4), 10);
+        if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+      }
+    });
+    return `CAM-${String(maxSeq + 1).padStart(3, '0')}`;
+  }, [cameras]);
 
   // Filtered cameras
   const filteredCameras = useMemo(() => {
@@ -231,11 +246,10 @@ const CameraManagement = () => {
       <div style={styles.page}>
         <CameraManagementHeader isRefreshing={isRefreshing} onRefresh={() => fetchCameras(true)} />
 
-        {/* 4 KPI Summary Cards (display only, click-to-filter removed) */}
+        {/* 3 KPI Summary Cards (maintenance status removed) */}
         <CameraSummaryCards
           totalCount={totalCount}
           activeCount={activeCount}
-          maintenanceCount={maintenanceCount}
           inactiveCount={inactiveCount}
           uptimePercent={uptimePercent}
         />
@@ -249,6 +263,7 @@ const CameraManagement = () => {
           onTestConnection={handleTestConnection}
           testResult={testResult}
           onClearTestResult={() => setTestResult(null)}
+          nextCameraIdPreview={nextCameraIdPreview}
         />
 
         <CameraFilterToolbar
@@ -258,7 +273,6 @@ const CameraManagement = () => {
           onSelectedFilterChange={setSelectedFilter}
           totalCount={totalCount}
           activeCount={activeCount}
-          maintenanceCount={maintenanceCount}
           inactiveCount={inactiveCount}
           onResetFilters={handleResetFilters}
         />

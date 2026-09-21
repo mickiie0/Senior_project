@@ -65,7 +65,7 @@ const ConfidenceColumn = ({ types }) => (
   </div>
 );
 
-const DetectionRow = ({ item, index, camInfo, onViewEvent }) => {
+const DetectionRow = ({ item, index, camInfo, onViewEvent, isAdmin }) => {
   const parsed = parseEventDetections(item);
 
   return (
@@ -79,9 +79,11 @@ const DetectionRow = ({ item, index, camInfo, onViewEvent }) => {
         <DetectionTypeBadges types={parsed.types} />
       </td>
 
-      <td style={styles.td}>
-        <ConfidenceColumn types={parsed.types} />
-      </td>
+      {isAdmin && (
+        <td style={styles.td}>
+          <ConfidenceColumn types={parsed.types} />
+        </td>
+      )}
 
       <td style={styles.td}>
         <div style={styles.locationBlock}>
@@ -129,6 +131,7 @@ const DetectionsFeed = ({
   eventsWithFire,
   eventsWithSmoke,
   onViewEvent,
+  isAdmin,
 }) => {
   return (
     <div style={styles.mainCard} className="dash-card">
@@ -206,7 +209,7 @@ const DetectionsFeed = ({
               <tr style={styles.tableHeadRow}>
                 <th style={styles.th}>Event ID</th>
                 <th style={styles.th}>ประเภทที่ตรวจพบ</th>
-                <th style={styles.th}>ความมั่นใจ (AI)</th>
+                {isAdmin && <th style={styles.th}>ความมั่นใจ (AI)</th>}
                 <th style={styles.th}>กล้อง & ตำแหน่ง</th>
                 <th style={styles.th}>เวลาที่บันทึก</th>
                 <th style={{ ...styles.th, textAlign: 'center' }}>การกระทำ</th>
@@ -220,6 +223,7 @@ const DetectionsFeed = ({
                   index={index}
                   camInfo={camerasMap[item.camera_id]}
                   onViewEvent={onViewEvent}
+                  isAdmin={isAdmin}
                 />
               ))}
             </tbody>

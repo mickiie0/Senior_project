@@ -10,16 +10,19 @@ import (
 
 func AuthMiddleware(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		header := c.GetHeader("Authorization")
+		tokenString := ""
+		if header := c.GetHeader("Authorization"); header != "" {
+			tokenString = strings.TrimSpace(strings.TrimPrefix(header, "Bearer "))
+		} else if queryToken := c.Query("token"); queryToken != "" {
+			tokenString = strings.TrimSpace(queryToken)
+		}
 
-		if header == "" {
+		if tokenString == "" {
 			c.AbortWithStatusJSON(401, gin.H{
 				"error": "missing token",
 			})
 			return
 		}
-
-		tokenString := strings.TrimSpace(strings.TrimPrefix(header, "Bearer "))
 
 		claims := &Claims{}
 		token, err := jwt.ParseWithClaims(

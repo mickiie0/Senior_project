@@ -67,7 +67,7 @@ const ConfidenceColumn = ({ types }) => (
   </div>
 );
 
-const EventTableRow = ({ item, index, camInfo, onSelectEvent }) => {
+const EventTableRow = ({ item, index, camInfo, onSelectEvent, isAdmin }) => {
   const parsed = parseEventDetections(item);
   const fullImgUrl = getFullImageUrl(item.image_url);
 
@@ -111,10 +111,12 @@ const EventTableRow = ({ item, index, camInfo, onSelectEvent }) => {
         <TypeBadges types={parsed.types} />
       </td>
 
-      {/* Column 4: Confidence Score for Each Detected Type */}
-      <td style={styles.td}>
-        <ConfidenceColumn types={parsed.types} />
-      </td>
+      {/* Column 4: Confidence Score for Each Detected Type (admin only) */}
+      {isAdmin && (
+        <td style={styles.td}>
+          <ConfidenceColumn types={parsed.types} />
+        </td>
+      )}
 
       {/* Column 5: Camera ID & Location */}
       <td style={styles.td}>
@@ -224,6 +226,7 @@ const EventsTable = ({
   onPageChange,
   onSelectEvent,
   onResetFilters,
+  isAdmin,
 }) => {
   return (
     <div style={styles.tableCard}>
@@ -256,7 +259,7 @@ const EventsTable = ({
                 <th style={{ ...styles.th, width: '68px', textAlign: 'center' }}>ภาพ Snapshot</th>
                 <th style={styles.th}>Event ID</th>
                 <th style={styles.th}>ประเภทที่ตรวจพบ</th>
-                <th style={styles.th}>ความมั่นใจ (AI)</th>
+                {isAdmin && <th style={styles.th}>ความมั่นใจ (AI)</th>}
                 <th style={styles.th}>กล้อง & ตำแหน่ง</th>
                 <th style={styles.th}>วันและเวลาที่บันทึก</th>
                 <th style={{ ...styles.th, textAlign: 'center' }}>การกระทำ</th>
@@ -270,6 +273,7 @@ const EventsTable = ({
                   index={index}
                   camInfo={camerasMap[item.camera_id]}
                   onSelectEvent={onSelectEvent}
+                  isAdmin={isAdmin}
                 />
               ))}
             </tbody>

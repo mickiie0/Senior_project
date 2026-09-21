@@ -51,10 +51,10 @@ type EventDetail struct {
 	EventID       string  `gorm:"type:varchar(20);not null;index" json:"event_id"`
 	DetectionType string  `gorm:"type:varchar(50);not null" json:"detection_type"`
 	Confidence    float64 `gorm:"not null" json:"confidence"`
-	BoxCenterX    float64 `gorm:"type:decimal(10,4)" json:"box_center_x"`
-	BoxCenterY    float64 `gorm:"type:decimal(10,4)" json:"box_center_y"`
-	BoxWidth      float64 `gorm:"type:decimal(10,4)" json:"box_width"`
-	BoxHeight     float64 `gorm:"type:decimal(10,4)" json:"box_height"`
+	BoxCenterX    int     `json:"box_center_x"`
+	BoxCenterY    int     `json:"box_center_y"`
+	BoxWidth      int     `json:"box_width"`
+	BoxHeight     int     `json:"box_height"`
 }
 
 func (EventDetail) TableName() string {
@@ -64,10 +64,10 @@ func (EventDetail) TableName() string {
 type BBoxInput struct {
 	DetectionType string  `json:"detection_type" binding:"required"`
 	Confidence    float64 `json:"confidence"`
-	BoxCenterX    float64 `json:"box_center_x"`
-	BoxCenterY    float64 `json:"box_center_y"`
-	BoxWidth      float64 `json:"box_width"`
-	BoxHeight     float64 `json:"box_height"`
+	BoxCenterX    int     `json:"box_center_x"`
+	BoxCenterY    int     `json:"box_center_y"`
+	BoxWidth      int     `json:"box_width"`
+	BoxHeight     int     `json:"box_height"`
 }
 
 type CreateEventInput struct {

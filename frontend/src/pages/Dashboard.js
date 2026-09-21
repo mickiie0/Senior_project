@@ -17,10 +17,14 @@ import {
   API_BASE_URL,
   POLL_INTERVAL_MS,
   getAuthHeaders,
+  getSSEUrl,
   isCameraOnline,
   isAuthError,
   parseEventDetections,
 } from '../components/dashboard/DashboardHelpers';
+
+// Alert stays active for this long after the most recent fire/smoke event
+const ALERT_ACTIVE_WINDOW_MS = 5 * 60 * 1000; // 5 นาที ปรับได้ตามต้องการ
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -32,6 +36,7 @@ const Dashboard = () => {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [filterType, setFilterType] = useState('all'); // 'all' | 'fire' | 'smoke'
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [sseStatus, setSseStatus] = useState('connecting'); // 'connecting' | 'connected' | 'disconnected'
 
   const isMountedRef = useRef(true);
   useEffect(() => {
@@ -109,6 +114,64 @@ const Dashboard = () => {
     const interval = setInterval(() => fetchDashboardData(false), POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [fetchDashboardData]);
+
+  // Server-Sent Events (SSE) Real-time Stream
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    let eventSource = null;
+    try {
+      const sseUrl = getSSEUrl();
+      eventSource = new EventSource(sseUrl);
+
+      eventSource.addEventListener('connected', () => {
+        if (isMountedRef.current) {
+          setSseStatus('connected');
+        }
+      });
+
+      eventSource.addEventListener('new_detection', (e) => {
+        try {
+          const newEvent = JSON.parse(e.data);
+          if (isMountedRef.current && newEvent?.event_id) {
+            setRecentDetections((prev) => {
+              if (prev.some((item) => item.event_id === newEvent.event_id)) {
+                return prev;
+              }
+              return [newEvent, ...prev];
+            });
+            setLastUpdated(new Date());
+          }
+        } catch (err) {
+          console.error('Error parsing SSE new_detection event:', err);
+        }
+      });
+
+      eventSource.onopen = () => {
+        if (isMountedRef.current) {
+          setSseStatus('connected');
+        }
+      };
+
+      eventSource.onerror = () => {
+        if (isMountedRef.current) {
+          setSseStatus('disconnected');
+        }
+      };
+    } catch (err) {
+      console.error('Failed to initialize SSE EventSource:', err);
+      if (isMountedRef.current) {
+        setSseStatus('disconnected');
+      }
+    }
+
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
+  }, []);
 
   // Fast camera map by ID
   const camerasMap = useMemo(() => {
@@ -195,11 +258,27 @@ const Dashboard = () => {
     });
   }, [recentDetections, filterType]);
 
-  // Latest high-risk event detection
-  const hasActiveFireAlert = fireTodayCount > 0;
-  const latestAlertEvent = hasActiveFireAlert
-    ? todayDetections.find((d) => parseEventDetections(d).hasFire)
-    : null;
+  // Latest fire-or-smoke event across all detections (not just "today")
+  const latestAlertEvent = useMemo(() => {
+    return (
+      [...recentDetections]
+        .filter((d) => {
+          const p = parseEventDetections(d);
+          return p.hasFire || p.hasSmoke;
+        })
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0] || null
+    );
+  }, [recentDetections]);
+
+  // True only while the latest fire/smoke event is within the active window
+  const hasActiveFireAlert = useMemo(() => {
+    if (!latestAlertEvent?.created_at) return false;
+    const elapsed = Date.now() - new Date(latestAlertEvent.created_at).getTime();
+    return elapsed <= ALERT_ACTIVE_WINDOW_MS;
+  }, [latestAlertEvent]);
+
+  // AI confidence scores are only shown to admin users
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
 
   return (
     <MainLayout
@@ -214,6 +293,7 @@ const Dashboard = () => {
           lastUpdated={lastUpdated}
           isRefreshing={isRefreshing}
           onRefresh={() => fetchDashboardData(true)}
+          sseStatus={sseStatus}
         />
 
         <StatusBanner
@@ -246,6 +326,7 @@ const Dashboard = () => {
             eventsWithFire={eventsWithFire}
             eventsWithSmoke={eventsWithSmoke}
             onViewEvent={setSelectedEvent}
+            isAdmin={isAdmin}
           />
 
           <div style={styles.rightColumn}>
@@ -254,6 +335,7 @@ const Dashboard = () => {
               totalSmokeDetections={totalSmokeDetections}
               recentDetectionsCount={recentDetections.length}
               avgConfidence={avgConfidence}
+              isAdmin={isAdmin}
             />
             <CameraStatusWidget cameras={cameras} totalCameras={totalCameras} />
           </div>
@@ -263,6 +345,7 @@ const Dashboard = () => {
           selectedEvent={selectedEvent}
           camerasMap={camerasMap}
           onClose={() => setSelectedEvent(null)}
+          isAdmin={isAdmin}
         />
       </div>
     </MainLayout>

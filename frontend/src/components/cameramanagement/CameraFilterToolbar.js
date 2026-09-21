@@ -10,7 +10,6 @@ const CameraFilterToolbar = ({
   onSelectedFilterChange,
   totalCount,
   activeCount,
-  maintenanceCount,
   inactiveCount,
   onResetFilters,
 }) => {
@@ -44,7 +43,6 @@ const CameraFilterToolbar = ({
         >
           <option value="all">สถานะทั้งหมด ({totalCount})</option>
           <option value={CAMERA_STATUS.ACTIVE}>เฉพาะพร้อมใช้งาน ({activeCount})</option>
-          <option value={CAMERA_STATUS.MAINTENANCE}>เฉพาะส่งซ่อม ({maintenanceCount})</option>
           <option value={CAMERA_STATUS.INACTIVE}>เฉพาะปิดใช้งาน ({inactiveCount})</option>
         </select>
       </div>

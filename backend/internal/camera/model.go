@@ -54,5 +54,5 @@ type UpdateCameraInput struct {
 	IPAddress   string `json:"ip_address" binding:"omitempty,ip"`
 	SubLocation string `json:"sub_location"`
 	Location    string `json:"location"`
-	Status      string `json:"status"`
+	Status      string `json:"status" binding:"omitempty,oneof=active inactive"`
 }

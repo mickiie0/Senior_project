@@ -7,6 +7,7 @@ const AnalyticsWidget = ({
   totalSmokeDetections,
   recentDetectionsCount,
   avgConfidence,
+  isAdmin,
 }) => {
   const total = totalFireDetections + totalSmokeDetections;
   const firePct = total > 0 ? Math.round((totalFireDetections / total) * 100) : 0;
@@ -66,16 +67,18 @@ const AnalyticsWidget = ({
           </div>
         </div>
 
-        <div style={styles.confidenceMetricBox}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '13px', color: '#475569', fontWeight: '500' }}>
-              ความแม่นยำเฉลี่ย (Avg Confidence)
-            </span>
-            <span style={{ fontSize: '15px', color: '#0f172a', fontWeight: '700' }}>
-              {avgConfidence > 0 ? `${avgConfidence.toFixed(1)}%` : '-'}
-            </span>
+        {isAdmin && (
+          <div style={styles.confidenceMetricBox}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', color: '#475569', fontWeight: '500' }}>
+                ความแม่นยำเฉลี่ย (Avg Confidence)
+              </span>
+              <span style={{ fontSize: '15px', color: '#0f172a', fontWeight: '700' }}>
+                {avgConfidence > 0 ? `${avgConfidence.toFixed(1)}%` : '-'}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

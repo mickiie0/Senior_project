@@ -4,7 +4,7 @@ import { Flame, Camera, AlertTriangle, X, ArrowUpRight } from 'lucide-react';
 import styles from './DashboardStyles';
 import { getFullImageUrl, parseEventDetections } from './DashboardHelpers';
 
-const EventDetailModal = ({ selectedEvent, camerasMap, onClose }) => {
+const EventDetailModal = ({ selectedEvent, camerasMap, onClose, isAdmin }) => {
   if (!selectedEvent) return null;
 
   const selectedParsed = parseEventDetections(selectedEvent);
@@ -90,28 +90,30 @@ const EventDetailModal = ({ selectedEvent, camerasMap, onClose }) => {
               </div>
             </div>
 
-            <div style={styles.modalDetailCard}>
-              <span style={styles.modalDetailLabel}>ความมั่นใจสูงสุดของ AI</span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
-                {selectedParsed.types.map((t) => (
-                  <div
-                    key={t.type}
-                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                  >
-                    <span style={{ fontSize: '12px', color: '#64748b' }}>{t.label}:</span>
-                    <span
-                      style={{
-                        fontSize: '15px',
-                        fontWeight: '700',
-                        color: t.type === 'fire' ? '#dc2626' : '#d97706',
-                      }}
+            {isAdmin && (
+              <div style={styles.modalDetailCard}>
+                <span style={styles.modalDetailLabel}>ความมั่นใจสูงสุดของ AI</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                  {selectedParsed.types.map((t) => (
+                    <div
+                      key={t.type}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                     >
-                      {(t.maxConfidence * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                ))}
+                      <span style={{ fontSize: '12px', color: '#64748b' }}>{t.label}:</span>
+                      <span
+                        style={{
+                          fontSize: '15px',
+                          fontWeight: '700',
+                          color: t.type === 'fire' ? '#dc2626' : '#d97706',
+                        }}
+                      >
+                        {(t.maxConfidence * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div style={styles.modalDetailCard}>
               <span style={styles.modalDetailLabel}>กล้องวงจรปิด</span>
@@ -142,7 +144,11 @@ const EventDetailModal = ({ selectedEvent, camerasMap, onClose }) => {
                           #{bIdx + 1} {box.detection_type?.toUpperCase()}
                         </span>
                         <span style={{ color: '#059669', fontWeight: '700' }}>
-                          {typeof box.confidence === 'number' ? `${(box.confidence * 100).toFixed(1)}%` : '-'}
+                          {isAdmin
+                            ? typeof box.confidence === 'number'
+                              ? `${(box.confidence * 100).toFixed(1)}%`
+                              : '-'
+                            : ''}
                         </span>
                       </div>
                       <div style={styles.bboxCoords}>

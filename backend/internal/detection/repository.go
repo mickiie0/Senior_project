@@ -8,6 +8,7 @@ import (
 
 type Repository interface {
 	ExistsCamera(cameraID string) (bool, error)
+	GetCamera(cameraID string) (*camera.Camera, error)
 	CreateEvent(event *DetectionEvent) error
 	GetAllEvents() ([]DetectionEvent, error)
 	UpdateImageURL(eventID string, imageURL string) error
@@ -28,6 +29,15 @@ func (r *repository) ExistsCamera(cameraID string) (bool, error) {
 		return false, err
 	}
 	return count > 0, nil
+}
+
+func (r *repository) GetCamera(cameraID string) (*camera.Camera, error) {
+	var cam camera.Camera
+	err := r.db.Where("id = ?", cameraID).First(&cam).Error
+	if err != nil {
+		return nil, err
+	}
+	return &cam, nil
 }
 
 func (r *repository) CreateEvent(e *DetectionEvent) error {

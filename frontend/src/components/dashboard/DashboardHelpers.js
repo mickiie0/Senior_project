@@ -1,8 +1,13 @@
 // Constants
 export const API_BASE_URL = 'http://localhost:8080/api';
 export const BACKEND_BASE_URL = 'http://localhost:8080';
-export const POLL_INTERVAL_MS = 5000;
+export const POLL_INTERVAL_MS = 20000; // Fallback polling interval when SSE is active
 export const ACTIVE_CAMERA_STATUS = 'active';
+
+export const getSSEUrl = () => {
+  const token = localStorage.getItem('token') || '';
+  return `${API_BASE_URL}/events/stream?token=${encodeURIComponent(token)}`;
+};
 
 export const getAuthHeaders = () => {
   const token = localStorage.getItem('token');

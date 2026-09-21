@@ -1,9 +1,9 @@
 import React from 'react';
-import { Video, CheckCircle2, AlertTriangle, WifiOff } from 'lucide-react';
+import { Video, CheckCircle2, WifiOff } from 'lucide-react';
 import styles from './CameraManagementStyles';
 import { CAMERA_STATUS } from './CameraManagementHelpers';
 
-const CameraSummaryCards = ({ totalCount, activeCount, maintenanceCount, inactiveCount, uptimePercent }) => {
+const CameraSummaryCards = ({ totalCount, activeCount, inactiveCount, uptimePercent }) => {
   const summaryCards = [
     {
       key: 'all',
@@ -22,15 +22,6 @@ const CameraSummaryCards = ({ totalCount, activeCount, maintenanceCount, inactiv
       icon: CheckCircle2,
       color: '#16a34a',
       bgColor: '#f0fdf4',
-    },
-    {
-      key: CAMERA_STATUS.MAINTENANCE,
-      title: 'ส่งซ่อมบำรุง (Maintenance)',
-      count: maintenanceCount,
-      sub: 'อยู่ระหว่างตรวจสอบ/ซ่อม',
-      icon: AlertTriangle,
-      color: '#d97706',
-      bgColor: '#fef3c7',
     },
     {
       key: CAMERA_STATUS.INACTIVE,

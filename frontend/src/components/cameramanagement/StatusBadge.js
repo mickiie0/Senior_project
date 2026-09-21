@@ -15,13 +15,6 @@ const STATUS_BADGE_CONFIG = {
     dotColor: '#dc2626',
     label: 'Inactive',
   },
-  maintenance: {
-    bg: '#fef3c7',
-    color: '#b45309',
-    border: '#fde68a',
-    dotColor: '#f59e0b',
-    label: 'Maintenance',
-  },
 };
 
 const StatusBadge = ({ status }) => {
