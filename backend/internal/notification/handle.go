@@ -8,14 +8,12 @@ import (
 )
 
 type Handler struct {
-	repo           Repository
-	discordService DiscordService
+	repo Repository
 }
 
-func NewHandler(repo Repository, discordService DiscordService) *Handler {
+func NewHandler(repo Repository) *Handler {
 	return &Handler{
-		repo:           repo,
-		discordService: discordService,
+		repo: repo,
 	}
 }
 
@@ -33,20 +31,4 @@ func (h *Handler) GetLogs(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, logs)
-}
-
-func (h *Handler) TestDiscord(c *gin.Context) {
-	status, err := h.discordService.SendTestAlert()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status":  status,
-		"message": "Test notification successfully sent to Discord",
-	})
 }

@@ -46,8 +46,30 @@ func main() {
 	ConnectDB()
 
 	if err := DB.AutoMigrate(&auth.User{}, &camera.Camera{}, &detection.DetectionEvent{}, &detection.EventDetail{}, &notification.NotificationLog{}); err != nil {
-    log.Fatalf("Failed to auto migrate database tables: %v", err)
-}
+		log.Fatalf("Failed to auto migrate database tables: %v", err)
+	}
+
+	addFKSQL := `
+		DO $$
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1 FROM information_schema.table_constraints
+				WHERE constraint_name = 'fk_notif_event'
+				  AND table_name = 'notification_logs'
+			) THEN
+				ALTER TABLE notification_logs
+					ADD CONSTRAINT fk_notif_event
+					FOREIGN KEY (event_id)
+					REFERENCES detection_events(event_id)
+					ON UPDATE CASCADE ON DELETE RESTRICT;
+			END IF;
+		END $$;
+	`
+	if err := DB.Exec(addFKSQL).Error; err != nil {
+		log.Fatalf("Failed to add FK constraint fk_notif_event: %v", err)
+	}
+	log.Println("FK constraint fk_notif_event ensured on notification_logs.event_id")
+
 
 	log.Println("Starting Camera Ping Worker...")
 	camera.StartPingWorker(DB, 1*time.Minute)
@@ -84,7 +106,7 @@ func main() {
 	}
 	notifRepo := notification.NewRepository(DB)
 	discordService := notification.NewDiscordService(discordWebhookURL, notifRepo)
-	notifHandler := notification.NewHandler(notifRepo, discordService)
+	notifHandler := notification.NewHandler(notifRepo)
 
 	// SSE Real-time Hub
 	sseHub := sse.NewHub()
@@ -129,7 +151,6 @@ func main() {
 		api.GET("/cameras", camHandler.GetAll)
 		api.GET("/cameras/:id", camHandler.GetByID)
 		api.GET("/notifications/logs", notifHandler.GetLogs)
-		api.POST("/notifications/test-discord", notifHandler.TestDiscord)
 
 		adminCameras := api.Group("/cameras")
 		adminCameras.Use(auth.RequireRole("admin"))

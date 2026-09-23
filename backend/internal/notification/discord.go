@@ -58,7 +58,6 @@ type EventAlertData struct {
 
 type DiscordService interface {
 	SendFireAlertAsync(data EventAlertData)
-	SendTestAlert() (string, error)
 }
 
 type discordService struct {
@@ -104,44 +103,6 @@ func (s *discordService) SendFireAlertAsync(data EventAlertData) {
 	}()
 }
 
-func (s *discordService) SendTestAlert() (string, error) {
-	testData := EventAlertData{
-		EventID:       "TEST-EVENT",
-		CameraID:      "TEST-CAM",
-		CameraName:    "กล้องทดสอบระบบ",
-		Location:      "อาคารหลัก (Main Building)",
-		SubLocation:   "ห้องทดสอบระบบ",
-		DetectionType: "fire",
-		Confidence:    0.99,
-		CreatedAt:     time.Now(),
-	}
-
-	err := s.sendAlert(testData)
-	if err != nil {
-		if s.repo != nil {
-			_ = s.repo.CreateLog(&NotificationLog{
-				EventID:      testData.EventID,
-				Channel:      "DISCORD",
-				Recipient:    maskURL(s.webhookURL),
-				Status:       "FAILED",
-				Message:      "Test alert triggered",
-				ErrorMessage: err.Error(),
-			})
-		}
-		return "Failed", err
-	}
-
-	if s.repo != nil {
-		_ = s.repo.CreateLog(&NotificationLog{
-			EventID:   testData.EventID,
-			Channel:   "DISCORD",
-			Recipient: maskURL(s.webhookURL),
-			Status:    "SUCCESS",
-			Message:   "Test alert triggered successfully",
-		})
-	}
-	return "Success", nil
-}
 
 func (s *discordService) sendAlert(data EventAlertData) error {
 	if s.webhookURL == "" {
@@ -153,7 +114,7 @@ func (s *discordService) sendAlert(data EventAlertData) error {
 	timeStr := localTime.Format("02/01/2006 15:04:05")
 
 	typeEmoji := "🔥"
-	typeLabel := "เพลิงไหม้ (FIRE)"
+	typeLabel := "เปลวไฟ (FIRE)"
 	color := 14428710
 	if strings.Contains(strings.ToLower(data.DetectionType), "smoke") {
 		typeEmoji = "💨"
