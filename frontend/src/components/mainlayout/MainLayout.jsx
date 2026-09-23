@@ -483,7 +483,7 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
               <span style={S.statusDot} className="sidebar-pulse-dot" />
               <span style={S.statusLabel}>SURVEILLANCE ACTIVE</span>
             </div>
-            <div style={S.statusSub}>AI Detection System v1.0</div>
+            <div style={S.statusSub}>Object Detection System v1.0</div>
           </div>
         </div>
       </aside>

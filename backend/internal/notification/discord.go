@@ -154,49 +154,57 @@ func (s *discordService) sendAlert(data EventAlertData) error {
 
 	typeEmoji := "🔥"
 	typeLabel := "เพลิงไหม้ (FIRE)"
-	color := 14428710 // Red 0xDC2626
+	color := 14428710
 	if strings.Contains(strings.ToLower(data.DetectionType), "smoke") {
 		typeEmoji = "💨"
 		typeLabel = "กลุ่มควัน (SMOKE)"
-		color = 15582236 // Amber 0xED6C02
+		color = 15582236
 	}
 
 	camLocation := data.CameraID
 	if data.Location != "" {
-		camLocation = fmt.Sprintf("%s (%s - %s)", data.CameraID, data.Location, data.SubLocation)
+		if data.SubLocation != "" {
+			camLocation = fmt.Sprintf("%s (%s - %s)", data.CameraID, data.Location, data.SubLocation)
+		} else {
+			camLocation = fmt.Sprintf("%s (%s)", data.CameraID, data.Location)
+		}
 	}
 
 	confPercent := fmt.Sprintf("%.2f%%", data.Confidence*100)
 
 	embed := DiscordEmbed{
-		Title:       fmt.Sprintf("🚨 ตรวจพบสัญญาณ%sฉุกเฉิน!", typeLabel),
-		Description: "ระบบตรวจจับไฟและควันจากกล้องวงจรปิด AI ตรวจพบเหตุการณ์ผิดปกติในพื้นที่ กรุณาตรวจสอบทันที!",
+		Title:       "🚨 ตรวจพบสัญญาณเพลิงไหม้ฉุกเฉิน!",
+		Description: "ระบบตรวจจับไฟและควันจากกล้องวงจรปิด ตรวจพบเหตุการณ์ผิดปกติในพื้นที่ กรุณาตรวจสอบทันที!",
 		Color:       color,
 		Fields: []DiscordEmbedField{
 			{Name: "🆔 รหัสเหตุการณ์ (Event ID)", Value: fmt.Sprintf("`%s`", data.EventID), Inline: true},
 			{Name: "📹 กล้องที่ตรวจพบ", Value: camLocation, Inline: true},
-			{Name: fmt.Sprintf("%s ประเภทการตรวจจับ", typeEmoji), Value: fmt.Sprintf("**%s** (ความมั่นใจ %s)", typeLabel, confPercent), Inline: false},
+			{Name: fmt.Sprintf("%s ประเภทการตรวจจับ", typeEmoji), Value: fmt.Sprintf("**%s**", typeLabel), Inline: true},
+			{Name: "🎯 ความมั่นใจ (Confidence)", Value: fmt.Sprintf("**%s**", confPercent), Inline: true},
 			{Name: "⏰ วัน-เวลาที่ตรวจพบ", Value: timeStr, Inline: false},
 		},
 		Footer: DiscordEmbedFooter{
-			Text: "Fire & Smoke AI Surveillance System • Automated Emergency Alert",
+			Text: "Fire & Smoke Detection System from CCTV • Automated Emergency Alert",
 		},
 		Timestamp: data.CreatedAt.UTC().Format(time.RFC3339),
 	}
 
-	payload := DiscordPayload{
-		Username:  "AI Fire Detection Alert",
-		AvatarURL: "https://cdn-icons-png.flaticon.com/512/785/785116.png",
-		Embeds:    []DiscordEmbed{embed},
-	}
-
-	// Check if local image exists to send as multipart attachment
 	var imageFilePath string
 	if data.ImageURL != "" {
-		relPath := strings.TrimPrefix(data.ImageURL, "/")
-		if fi, err := os.Stat(relPath); err == nil && !fi.IsDir() {
-			imageFilePath = relPath
+		if strings.HasPrefix(data.ImageURL, "http://") || strings.HasPrefix(data.ImageURL, "https://") {
+			embed.Image = &DiscordEmbedImage{URL: data.ImageURL}
+		} else {
+			relPath := strings.TrimPrefix(data.ImageURL, "/")
+			if fi, err := os.Stat(relPath); err == nil && !fi.IsDir() {
+				imageFilePath = relPath
+			}
 		}
+	}
+
+	payload := DiscordPayload{
+		Username:  "Fire & Smoke Detection Alert",
+		AvatarURL: "https://cdn-icons-png.flaticon.com/512/785/785116.png",
+		Embeds:    []DiscordEmbed{embed},
 	}
 
 	if imageFilePath != "" {

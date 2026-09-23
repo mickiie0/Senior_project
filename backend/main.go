@@ -46,8 +46,8 @@ func main() {
 	ConnectDB()
 
 	if err := DB.AutoMigrate(&auth.User{}, &camera.Camera{}, &detection.DetectionEvent{}, &detection.EventDetail{}, &notification.NotificationLog{}); err != nil {
-		log.Fatalf("Failed to auto migrate database tables: %v", err)
-	}
+    log.Fatalf("Failed to auto migrate database tables: %v", err)
+}
 
 	log.Println("Starting Camera Ping Worker...")
 	camera.StartPingWorker(DB, 1*time.Minute)
@@ -80,7 +80,7 @@ func main() {
 	// Notification & Discord Module
 	discordWebhookURL := viper.GetString("DISCORD_WEBHOOK_URL")
 	if discordWebhookURL == "" {
-		discordWebhookURL = "https://discord.com/api/webhooks/1551643769940607158/fSIdxTPpRPlT1KqHPZSjez8CkUdF3Xu0jOQKkPNJnE-4oHvkPAeqNVits7WUgj-Tenqc"
+		log.Fatalf("DISCORD_WEBHOOK_URL is not set in environment or .env file")
 	}
 	notifRepo := notification.NewRepository(DB)
 	discordService := notification.NewDiscordService(discordWebhookURL, notifRepo)

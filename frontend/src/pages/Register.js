@@ -45,7 +45,6 @@ const Register = () => {
     e.preventDefault();
     setError(null);
 
-    // Validation ความยาวข้อความให้ตรงกับ Backend
     if (username.trim().length < 3) {
       setError('ชื่อผู้ใช้งานต้องมีอย่างน้อย 3 ตัวอักษร');
       return;
@@ -85,13 +84,6 @@ const Register = () => {
   return (
     <div style={styles.container}>
       <style>{`
-        @keyframes pulseDot {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.4; transform: scale(0.85); }
-        }
-        .register-pulse-dot {
-          animation: pulseDot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
         .register-input:focus {
           border-color: #2563eb !important;
           background-color: #ffffff !important;
@@ -130,10 +122,6 @@ const Register = () => {
           <div>
             <h2 style={styles.brandTitle}>FIRE & SMOKE</h2>
             <p style={styles.brandSubtitle}>DETECTION SYSTEM FROM CCTV CAMERAS</p>
-          </div>
-          <div style={styles.statusBadge}>
-            <span style={styles.statusDot} className="register-pulse-dot" />
-            <span>SURVEILLANCE ACTIVE</span>
           </div>
         </div>
 
@@ -272,7 +260,7 @@ const Register = () => {
         {/* System security footer note */}
         <div style={styles.systemFooter}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-            <ShieldCheck size={14} color="#64748b" /> AI Detection System v1.0
+            <ShieldCheck size={14} color="#64748b" /> Object Detection System v1.0
           </span>
         </div>
       </div>

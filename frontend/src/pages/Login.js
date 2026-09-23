@@ -73,13 +73,6 @@ const Login = () => {
   return (
     <div style={styles.container}>
       <style>{`
-        @keyframes pulseDot {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.4; transform: scale(0.85); }
-        }
-        .login-pulse-dot {
-          animation: pulseDot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
         .login-input:focus {
           border-color: #2563eb !important;
           background-color: #ffffff !important;
@@ -119,10 +112,6 @@ const Login = () => {
             <h2 style={styles.brandTitle}>FIRE & SMOKE</h2>
             <p style={styles.brandSubtitle}>DETECTION SYSTEM FROM CCTV CAMERAS</p>
           </div>
-          <div style={styles.statusBadge}>
-            <span style={styles.statusDot} className="login-pulse-dot" />
-            <span>SURVEILLANCE ACTIVE</span>
-          </div>
         </div>
 
         {/* Login Card */}
@@ -160,25 +149,7 @@ const Login = () => {
             </div>
 
             <div style={styles.inputGroup}>
-              <div style={styles.label}>
-                <span>รหัสผ่าน</span>
-                <button
-                  type="button"
-                  onClick={() => setShowForgotModal(true)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#2563eb',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    padding: 0,
-                  }}
-                  className="login-link"
-                >
-                  ลืมรหัสผ่าน?
-                </button>
-              </div>
+              <label style={styles.label}>รหัสผ่าน</label>
               <div style={styles.inputWrapper}>
                 <div style={styles.inputIcon}>
                   <Lock size={17} />
@@ -201,6 +172,25 @@ const Login = () => {
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
+              </div>
+
+              <div style={{ textAlign: 'left', marginTop: '-6px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(true)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#2563eb',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                  className="login-link"
+                >
+                  ลืมรหัสผ่าน?
                 </button>
               </div>
             </div>
@@ -231,7 +221,7 @@ const Login = () => {
         {/* System security footer note */}
         <div style={styles.systemFooter}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-            <ShieldCheck size={14} color="#64748b" /> AI Detection System v1.0
+            <ShieldCheck size={14} color="#64748b" /> Object Detection System v1.0
           </span>
         </div>
       </div>
