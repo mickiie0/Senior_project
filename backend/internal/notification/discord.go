@@ -179,9 +179,11 @@ func (s *discordService) sendAlert(data EventAlertData) error {
 		Fields: []DiscordEmbedField{
 			{Name: "🆔 รหัสเหตุการณ์ (Event ID)", Value: fmt.Sprintf("`%s`", data.EventID), Inline: true},
 			{Name: "📹 กล้องที่ตรวจพบ", Value: camLocation, Inline: true},
+			{Name: "", Value: "", Inline: false},
 			{Name: fmt.Sprintf("%s ประเภทการตรวจจับ", typeEmoji), Value: fmt.Sprintf("**%s**", typeLabel), Inline: true},
 			{Name: "🎯 ความมั่นใจ (Confidence)", Value: fmt.Sprintf("**%s**", confPercent), Inline: true},
-			{Name: "⏰ วัน-เวลาที่ตรวจพบ", Value: timeStr, Inline: false},
+			{Name: "", Value: "", Inline: false},
+			{Name: "⏰ วัน-เวลาที่ตรวจพบ", Value: timeStr, Inline: true},
 		},
 		Footer: DiscordEmbedFooter{
 			Text: "Fire & Smoke Detection System from CCTV • Automated Emergency Alert",

@@ -10,8 +10,8 @@ import (
 type Camera struct {
 	ID          string    `gorm:"type:varchar(20);primaryKey" json:"camera_id"`
 	IPAddress   string    `gorm:"type:varchar(45);not null" json:"ip_address"`
-	SubLocation string    `gorm:"type:varchar(100);not null" json:"sub_location"`
 	Location    string    `gorm:"type:varchar(100);not null" json:"location"`
+	SubLocation string    `gorm:"type:varchar(100);not null" json:"sub_location"`
 	Status      string    `gorm:"type:varchar(20);not null;default:'unknown'" json:"status"`
 	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
