@@ -24,12 +24,14 @@ import {
   Clock,
   Mail,
   ShieldCheck,
+  MessageSquare,
 } from 'lucide-react';
 import audioAlert from '../../utils/audioAlert';
 import {
   requestNotificationPermission,
   sendDesktopNotification,
 } from '../../utils/browserNotification';
+import EventDetailModal from '../dashboard/EventDetailModal';
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -123,8 +125,29 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
   const [showNewPw, setShowNewPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
 
+  const [selectedNotifEvent, setSelectedNotifEvent] = useState(null);
+  const [camerasMap, setCamerasMap] = useState({});
+
   const notifMenuRef = useRef(null);
   const profileMenuRef = useRef(null);
+
+  // Fetch cameras for modal details
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    axios
+      .get(`${API_URL}/cameras`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        const map = {};
+        (res.data || []).forEach((c) => {
+          map[c.camera_id] = c;
+        });
+        setCamerasMap(map);
+      })
+      .catch(() => {});
+  }, []);
 
   // Fetch and cache user info from /api/me
   useEffect(() => {
@@ -254,7 +277,10 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
               icon: '/logo/fire.png',
               tag: newEvent.event_id,
               onClick: () => {
-                navigate('/dashboard');
+                try {
+                  window.focus();
+                } catch (e) {}
+                setSelectedNotifEvent(newEvent);
               },
             });
           }
@@ -340,6 +366,7 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
     { path: '/dashboard', name: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
     { path: '/events', name: 'Event History', icon: History, adminOnly: false },
     { path: '/cameras', name: 'Camera Management', icon: Video, adminOnly: true },
+    { path: '/discord', name: 'Discord Community', icon: MessageSquare, adminOnly: false },
   ];
 
   const menuItems = allMenuItems.filter((item) => {
@@ -589,7 +616,7 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
                             key={item.event_id}
                             onClick={() => {
                               setShowNotifMenu(false);
-                              navigate('/dashboard');
+                              setSelectedNotifEvent(item);
                             }}
                             style={S.notifItem}
                           >
@@ -1080,6 +1107,16 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
             </div>
           </div>
         </div>
+      )}
+
+      {/* ─── Modal 5: รายละเอียดเหตุการณ์จากการแจ้งเตือน (Event Detail Modal) ────── */}
+      {selectedNotifEvent && (
+        <EventDetailModal
+          selectedEvent={selectedNotifEvent}
+          camerasMap={camerasMap}
+          onClose={() => setSelectedNotifEvent(null)}
+          isAdmin={user?.role?.toLowerCase() === 'admin'}
+        />
       )}
     </div>
   );

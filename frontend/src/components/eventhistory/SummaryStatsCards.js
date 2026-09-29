@@ -18,7 +18,7 @@ const SummaryStatsCards = ({ totalCount, fireCount, smokeCount, todayCount }) =>
 
       <div style={styles.statCard}>
         <div style={styles.statHeader}>
-          <span style={styles.statLabel}>พบเปลวไฟ (Fire)</span>
+          <span style={styles.statLabel}>พบไฟ (Fire)</span>
           <div style={{ ...styles.statIconBadge, backgroundColor: '#fee2e2', color: '#dc2626' }}>
             <Flame size={18} />
           </div>
@@ -29,7 +29,7 @@ const SummaryStatsCards = ({ totalCount, fireCount, smokeCount, todayCount }) =>
 
       <div style={styles.statCard}>
         <div style={styles.statHeader}>
-          <span style={styles.statLabel}>พบกลุ่มควัน (Smoke)</span>
+          <span style={styles.statLabel}>พบควัน (Smoke)</span>
           <div style={{ ...styles.statIconBadge, backgroundColor: '#fef3c7', color: '#d97706' }}>
             <AlertTriangle size={18} />
           </div>

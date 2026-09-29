@@ -6,6 +6,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import EventHistory from './pages/EventHistory';
 import CameraManagement from './pages/CameraManagement';
+import DiscordCommunity from './pages/DiscordCommunity';
 
 const App = () => {
   return (
@@ -16,6 +17,7 @@ const App = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/events" element={<EventHistory />} />
         <Route path="/cameras" element={<CameraManagement />} />
+        <Route path="/discord" element={<DiscordCommunity />} />
       </Routes>
     </BrowserRouter>
   );

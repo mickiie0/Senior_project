@@ -104,8 +104,12 @@ func main() {
 	if discordWebhookURL == "" {
 		log.Fatalf("DISCORD_WEBHOOK_URL is not set in environment or .env file")
 	}
+	frontendURL := viper.GetString("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:3000"
+	}
 	notifRepo := notification.NewRepository(DB)
-	discordService := notification.NewDiscordService(discordWebhookURL, notifRepo)
+	discordService := notification.NewDiscordService(discordWebhookURL, frontendURL, notifRepo)
 	notifHandler := notification.NewHandler(notifRepo)
 
 	// SSE Real-time Hub
@@ -151,6 +155,15 @@ func main() {
 		api.GET("/cameras", camHandler.GetAll)
 		api.GET("/cameras/:id", camHandler.GetByID)
 		api.GET("/notifications/logs", notifHandler.GetLogs)
+		api.GET("/community/discord", func(c *gin.Context) {
+			inviteURL := viper.GetString("DISCORD_INVITE_URL")
+			if inviteURL == "" {
+				inviteURL = "https://discord.gg/vKzVv8s4"
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"invite_url": inviteURL,
+			})
+		})
 
 		adminCameras := api.Group("/cameras")
 		adminCameras.Use(auth.RequireRole("admin"))

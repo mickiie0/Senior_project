@@ -88,7 +88,7 @@ const StatsCards = ({
       {/* Card 4: Security Status */}
       <div style={styles.statCard} className="dash-card">
         <div style={styles.statCardHeader}>
-          <span style={styles.statCardTitle}>ระดับการแจ้งเตือน</span>
+          <span style={styles.statCardTitle}>สถานการณ์ตอนนี้</span>
           <div
             style={{
               ...styles.statIconBadge,
@@ -107,10 +107,10 @@ const StatsCards = ({
             marginTop: '10px',
           }}
         >
-          {hasActiveFireAlert ? 'เฝ้าระวังฉุกเฉิน' : 'ระดับปกติ'}
+          {hasActiveFireAlert ? 'เหตุการณ์ฉุกเฉิน' : 'เหตุการณ์ปกติ'}
         </div>
         <div style={styles.statCardSubText}>
-          {hasActiveFireAlert ? 'ตรวจพบเหตุการณ์ใน 24 ชม.' : 'ไม่พบเหตุการณ์ผิดปกติ'}
+          {hasActiveFireAlert ? 'ตรวจพบเหตุการณ์ผิดปกติ' : 'ไม่พบเหตุการณ์ผิดปกติ'}
         </div>
       </div>
     </div>

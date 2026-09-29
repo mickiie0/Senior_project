@@ -30,6 +30,7 @@ type DiscordEmbedFooter struct {
 
 type DiscordEmbed struct {
 	Title       string              `json:"title"`
+	URL         string              `json:"url,omitempty"`
 	Description string              `json:"description"`
 	Color       int                 `json:"color"`
 	Fields      []DiscordEmbedField `json:"fields"`
@@ -44,6 +45,11 @@ type DiscordPayload struct {
 	Embeds    []DiscordEmbed `json:"embeds"`
 }
 
+type DetectionInfo struct {
+	Type       string  `json:"type"`
+	Confidence float64 `json:"confidence"`
+}
+
 type EventAlertData struct {
 	EventID       string
 	CameraID      string
@@ -52,6 +58,7 @@ type EventAlertData struct {
 	SubLocation   string
 	DetectionType string
 	Confidence    float64
+	Detections    []DetectionInfo
 	ImageURL      string
 	CreatedAt     time.Time
 }
@@ -61,16 +68,18 @@ type DiscordService interface {
 }
 
 type discordService struct {
-	webhookURL string
-	repo       Repository
-	client     *http.Client
+	webhookURL  string
+	frontendURL string
+	repo        Repository
+	client      *http.Client
 }
 
-func NewDiscordService(webhookURL string, repo Repository) DiscordService {
+func NewDiscordService(webhookURL string, frontendURL string, repo Repository) DiscordService {
 	return &discordService{
-		webhookURL: webhookURL,
-		repo:       repo,
-		client:     &http.Client{Timeout: 15 * time.Second},
+		webhookURL:  webhookURL,
+		frontendURL: frontendURL,
+		repo:        repo,
+		client:      &http.Client{Timeout: 15 * time.Second},
 	}
 }
 
@@ -113,13 +122,57 @@ func (s *discordService) sendAlert(data EventAlertData) error {
 	localTime := data.CreatedAt.In(loc)
 	timeStr := localTime.Format("02/01/2006 15:04:05")
 
+	var hasFire bool
+	var hasSmoke bool
+	var maxFireConf float64
+	var maxSmokeConf float64
+
+	if len(data.Detections) > 0 {
+		for _, d := range data.Detections {
+			lower := strings.ToLower(d.Type)
+			if strings.Contains(lower, "fire") {
+				hasFire = true
+				if d.Confidence > maxFireConf {
+					maxFireConf = d.Confidence
+				}
+			} else if strings.Contains(lower, "smoke") {
+				hasSmoke = true
+				if d.Confidence > maxSmokeConf {
+					maxSmokeConf = d.Confidence
+				}
+			}
+		}
+	} else {
+		lower := strings.ToLower(data.DetectionType)
+		if strings.Contains(lower, "fire") {
+			hasFire = true
+			maxFireConf = data.Confidence
+		} else if strings.Contains(lower, "smoke") {
+			hasSmoke = true
+			maxSmokeConf = data.Confidence
+		}
+	}
+
 	typeEmoji := "🔥"
-	typeLabel := "เปลวไฟ (FIRE)"
+	typeLabel := "ไฟ (FIRE)"
 	color := 14428710
-	if strings.Contains(strings.ToLower(data.DetectionType), "smoke") {
+	confPercent := fmt.Sprintf("**%.1f%%**", data.Confidence*100)
+
+	if hasFire && hasSmoke {
+		typeEmoji = "🚨"
+		typeLabel = "ไฟและควัน (FIRE & SMOKE)"
+		color = 14428710
+		confPercent = fmt.Sprintf("FIRE: **%.1f%%** | SMOKE: **%.1f%%**", maxFireConf*100, maxSmokeConf*100)
+	} else if hasSmoke {
 		typeEmoji = "💨"
-		typeLabel = "กลุ่มควัน (SMOKE)"
+		typeLabel = "ควัน (SMOKE)"
 		color = 15582236
+		confPercent = fmt.Sprintf("**%.1f%%**", maxSmokeConf*100)
+	} else if hasFire {
+		typeEmoji = "🔥"
+		typeLabel = "ไฟ (FIRE)"
+		color = 14428710
+		confPercent = fmt.Sprintf("**%.1f%%**", maxFireConf*100)
 	}
 
 	camLocation := data.CameraID
@@ -131,20 +184,26 @@ func (s *discordService) sendAlert(data EventAlertData) error {
 		}
 	}
 
-	confPercent := fmt.Sprintf("%.2f%%", data.Confidence*100)
+	baseURL := strings.TrimRight(s.frontendURL, "/")
+	if baseURL == "" {
+		baseURL = "http://localhost:3000"
+	}
+	webEventsURL := fmt.Sprintf("%s/events", baseURL)
 
 	embed := DiscordEmbed{
 		Title:       "🚨 ตรวจพบสัญญาณเพลิงไหม้ฉุกเฉิน!",
-		Description: "ระบบตรวจจับไฟและควันจากกล้องวงจรปิด ตรวจพบเหตุการณ์ผิดปกติในพื้นที่ กรุณาตรวจสอบทันที!",
+		URL:         webEventsURL,
+		Description: "ระบบตรวจจับไฟและควันจากกล้องวงจรปิด CCTV\nกรุณาตรวจสอบสถานการณ์ทันที!",
 		Color:       color,
 		Fields: []DiscordEmbedField{
 			{Name: "🆔 รหัสเหตุการณ์ (Event ID)", Value: fmt.Sprintf("`%s`", data.EventID), Inline: true},
 			{Name: "📹 กล้องที่ตรวจพบ", Value: camLocation, Inline: true},
 			{Name: "", Value: "", Inline: false},
 			{Name: fmt.Sprintf("%s ประเภทการตรวจจับ", typeEmoji), Value: fmt.Sprintf("**%s**", typeLabel), Inline: true},
-			{Name: "🎯 ความมั่นใจ (Confidence)", Value: fmt.Sprintf("**%s**", confPercent), Inline: true},
+			{Name: "🎯 ความมั่นใจ (Confidence)", Value: confPercent, Inline: true},
 			{Name: "", Value: "", Inline: false},
 			{Name: "⏰ วัน-เวลาที่ตรวจพบ", Value: timeStr, Inline: true},
+			{Name: "🌐 ระบบมอนิเตอร์ออนไลน์ (Web System)", Value: fmt.Sprintf("[🔗 คลิกที่นี่เพื่อเปิดดูเหตุการณ์บนเว็บไซต์](%s)", webEventsURL), Inline: false},
 		},
 		Footer: DiscordEmbedFooter{
 			Text: "Fire & Smoke Detection System from CCTV • Automated Emergency Alert",

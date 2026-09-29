@@ -77,6 +77,7 @@ func (s *service) ProcessEvent(input CreateEventInput) (*DetectionEvent, error) 
 	if s.discord != nil {
 		hasAlert := false
 		var topDetection EventDetail
+		var detectionsSummary []notification.DetectionInfo
 		for _, d := range details {
 			lower := strings.ToLower(d.DetectionType)
 			if strings.Contains(lower, "fire") || strings.Contains(lower, "smoke") {
@@ -84,6 +85,10 @@ func (s *service) ProcessEvent(input CreateEventInput) (*DetectionEvent, error) 
 				if d.Confidence >= topDetection.Confidence {
 					topDetection = d
 				}
+				detectionsSummary = append(detectionsSummary, notification.DetectionInfo{
+					Type:       d.DetectionType,
+					Confidence: d.Confidence,
+				})
 			}
 		}
 
@@ -104,6 +109,7 @@ func (s *service) ProcessEvent(input CreateEventInput) (*DetectionEvent, error) 
 				SubLocation:   camSubLocation,
 				DetectionType: topDetection.DetectionType,
 				Confidence:    topDetection.Confidence,
+				Detections:    detectionsSummary,
 				ImageURL:      event.ImageURL,
 				CreatedAt:     event.CreatedAt,
 			})
