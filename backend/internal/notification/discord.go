@@ -112,7 +112,6 @@ func (s *discordService) SendFireAlertAsync(data EventAlertData) {
 	}()
 }
 
-
 func (s *discordService) sendAlert(data EventAlertData) error {
 	if s.webhookURL == "" {
 		return fmt.Errorf("discord webhook URL is not configured")
@@ -186,24 +185,24 @@ func (s *discordService) sendAlert(data EventAlertData) error {
 
 	baseURL := strings.TrimRight(s.frontendURL, "/")
 	if baseURL == "" {
-		baseURL = "http://localhost:3000"
+		baseURL = "http://localhost:8081"
 	}
 	webEventsURL := fmt.Sprintf("%s/events", baseURL)
 
 	embed := DiscordEmbed{
-		Title:       "🚨 ตรวจพบสัญญาณเพลิงไหม้ฉุกเฉิน!",
+		Title:       "ตรวจพบสัญญาณเพลิงไหม้ฉุกเฉิน!",
 		URL:         webEventsURL,
 		Description: "ระบบตรวจจับไฟและควันจากกล้องวงจรปิด CCTV\nกรุณาตรวจสอบสถานการณ์ทันที!",
 		Color:       color,
 		Fields: []DiscordEmbedField{
-			{Name: "🆔 รหัสเหตุการณ์ (Event ID)", Value: fmt.Sprintf("`%s`", data.EventID), Inline: true},
-			{Name: "📹 กล้องที่ตรวจพบ", Value: camLocation, Inline: true},
+			{Name: "รหัสเหตุการณ์ (Event ID)", Value: fmt.Sprintf("`%s`", data.EventID), Inline: true},
+			{Name: "กล้องที่ตรวจพบ", Value: camLocation, Inline: true},
 			{Name: "", Value: "", Inline: false},
 			{Name: fmt.Sprintf("%s ประเภทการตรวจจับ", typeEmoji), Value: fmt.Sprintf("**%s**", typeLabel), Inline: true},
-			{Name: "🎯 ความมั่นใจ (Confidence)", Value: confPercent, Inline: true},
+			{Name: "ความมั่นใจ (Confidence)", Value: confPercent, Inline: true},
 			{Name: "", Value: "", Inline: false},
-			{Name: "⏰ วัน-เวลาที่ตรวจพบ", Value: timeStr, Inline: true},
-			{Name: "🌐 ระบบมอนิเตอร์ออนไลน์ (Web System)", Value: fmt.Sprintf("[🔗 คลิกที่นี่เพื่อเปิดดูเหตุการณ์บนเว็บไซต์](%s)", webEventsURL), Inline: false},
+			{Name: "วัน-เวลาที่ตรวจพบ", Value: timeStr, Inline: true},
+			{Name: "ระบบมอนิเตอร์ออนไลน์ (Web System)", Value: fmt.Sprintf("[🔗 คลิกที่นี่เพื่อเปิดดูเหตุการณ์บนเว็บไซต์](%s)", webEventsURL), Inline: false},
 		},
 		Footer: DiscordEmbedFooter{
 			Text: "Fire & Smoke Detection System from CCTV • Automated Emergency Alert",
