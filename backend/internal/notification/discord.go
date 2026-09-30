@@ -190,7 +190,7 @@ func (s *discordService) sendAlert(data EventAlertData) error {
 	webEventsURL := fmt.Sprintf("%s/events", baseURL)
 
 	embed := DiscordEmbed{
-		Title:       "ตรวจพบสัญญาณเพลิงไหม้ฉุกเฉิน!",
+		Title:       "🚨 ตรวจพบสัญญาณเพลิงไหม้!",
 		URL:         webEventsURL,
 		Description: "ระบบตรวจจับไฟและควันจากกล้องวงจรปิด CCTV\nกรุณาตรวจสอบสถานการณ์ทันที!",
 		Color:       color,
