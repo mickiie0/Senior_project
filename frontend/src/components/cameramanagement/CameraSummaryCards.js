@@ -3,7 +3,14 @@ import { Video, CheckCircle2, WifiOff } from 'lucide-react';
 import styles from './CameraManagementStyles';
 import { CAMERA_STATUS } from './CameraManagementHelpers';
 
-const CameraSummaryCards = ({ totalCount, activeCount, inactiveCount, uptimePercent }) => {
+const CameraSummaryCards = ({
+  totalCount,
+  activeCount,
+  inactiveCount,
+  uptimePercent,
+  selectedFilter = 'all',
+  onSelectFilter,
+}) => {
   const summaryCards = [
     {
       key: 'all',
@@ -36,24 +43,45 @@ const CameraSummaryCards = ({ totalCount, activeCount, inactiveCount, uptimePerc
 
   return (
     <div style={styles.statsGrid}>
-      {summaryCards.map(({ key, title, count, sub, icon: Icon, color, bgColor }) => (
-        <div
-          key={key}
-          style={{ ...styles.statCard, cursor: 'default' }}
-          className="dash-card"
-        >
-          <div style={styles.statCardHeader}>
-            <span style={styles.statCardTitle}>{title}</span>
-            <div style={{ ...styles.statIconBadge, backgroundColor: bgColor, color }}>
-              <Icon size={18} />
+      {summaryCards.map(({ key, title, count, sub, icon: Icon, color, bgColor }) => {
+        const isSelected = selectedFilter === key;
+
+        return (
+          <div
+            key={key}
+            onClick={() => {
+              if (onSelectFilter) {
+                // If already selected, clicking again resets to 'all' (unless it's 'all')
+                onSelectFilter(key === selectedFilter && key !== 'all' ? 'all' : key);
+              }
+            }}
+            style={{
+              ...styles.statCard,
+              cursor: onSelectFilter ? 'pointer' : 'default',
+              border: isSelected ? `2px solid ${color}` : '1px solid #e2e8f0',
+              backgroundColor: isSelected ? bgColor : '#ffffff',
+              transform: isSelected ? 'translateY(-2px)' : 'none',
+              boxShadow: isSelected ? `0 4px 12px ${color}25` : undefined,
+              transition: 'all 0.2s ease',
+            }}
+            className="dash-card"
+            title={`คลิกเพื่อกรอง: ${title}`}
+          >
+            <div style={styles.statCardHeader}>
+              <span style={{ ...styles.statCardTitle, color: isSelected ? color : '#64748b', fontWeight: isSelected ? '700' : '600' }}>
+                {title}
+              </span>
+              <div style={{ ...styles.statIconBadge, backgroundColor: isSelected ? '#ffffff' : bgColor, color }}>
+                <Icon size={18} />
+              </div>
             </div>
+            <div style={{ ...styles.statCardValue, color }}>
+              {count} <span style={styles.statCardUnit}>ตัว</span>
+            </div>
+            <div style={styles.statCardSubText}>{sub}</div>
           </div>
-          <div style={{ ...styles.statCardValue, color }}>
-            {count} <span style={styles.statCardUnit}>ตัว</span>
-          </div>
-          <div style={styles.statCardSubText}>{sub}</div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

@@ -162,21 +162,73 @@ const EventHistory = () => {
       // 4. Date range filter
       if (startDate && evt.created_at) {
         const eventDate = new Date(evt.created_at);
-        const start = new Date(startDate);
-        start.setHours(0, 0, 0, 0);
+        const [sy, sm, sd] = startDate.split('-').map(Number);
+        const start = new Date(sy, sm - 1, sd, 0, 0, 0, 0);
         if (eventDate < start) return false;
       }
 
       if (endDate && evt.created_at) {
         const eventDate = new Date(evt.created_at);
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
+        const [ey, em, ed] = endDate.split('-').map(Number);
+        const end = new Date(ey, em - 1, ed, 23, 59, 59, 999);
         if (eventDate > end) return false;
       }
 
       return true;
     });
   }, [events, searchTerm, typeFilter, cameraFilter, startDate, endDate, camerasMap]);
+
+  // Today date string (YYYY-MM-DD)
+  const todayDateStr = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  // Determine which summary card is active
+  const selectedFilter = useMemo(() => {
+    if (startDate === todayDateStr && endDate === todayDateStr && typeFilter === 'all') {
+      return 'today';
+    }
+    if (typeFilter === 'fire' && !startDate && !endDate) {
+      return 'fire';
+    }
+    if (typeFilter === 'smoke' && !startDate && !endDate) {
+      return 'smoke';
+    }
+    if (typeFilter === 'all' && !startDate && !endDate && cameraFilter === 'all' && !searchTerm) {
+      return 'all';
+    }
+    return '';
+  }, [startDate, endDate, typeFilter, todayDateStr, cameraFilter, searchTerm]);
+
+  // Quick filter handler when clicking summary cards
+  const handleSelectFilter = useCallback(
+    (key) => {
+      if (key === 'all') {
+        setTypeFilter('all');
+        setStartDate('');
+        setEndDate('');
+        setCameraFilter('all');
+        setSearchTerm('');
+      } else if (key === 'fire') {
+        setTypeFilter('fire');
+        setStartDate('');
+        setEndDate('');
+      } else if (key === 'smoke') {
+        setTypeFilter('smoke');
+        setStartDate('');
+        setEndDate('');
+      } else if (key === 'today') {
+        setTypeFilter('all');
+        setStartDate(todayDateStr);
+        setEndDate(todayDateStr);
+      }
+    },
+    [todayDateStr]
+  );
 
   // Reset pagination when filter changes
   useEffect(() => {
@@ -218,6 +270,8 @@ const EventHistory = () => {
           fireCount={fireCount}
           smokeCount={smokeCount}
           todayCount={todayCount}
+          selectedFilter={selectedFilter}
+          onSelectFilter={handleSelectFilter}
         />
 
         <FilterToolbar

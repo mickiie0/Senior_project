@@ -80,7 +80,10 @@ func (s *service) ProcessEvent(input CreateEventInput) (*DetectionEvent, error) 
 		var detectionsSummary []notification.DetectionInfo
 		for _, d := range details {
 			lower := strings.ToLower(d.DetectionType)
-			if strings.Contains(lower, "fire") || strings.Contains(lower, "smoke") {
+			isFireAlert := strings.Contains(lower, "fire") && d.Confidence >= 0.65
+			isSmokeAlert := strings.Contains(lower, "smoke") && d.Confidence >= 0.30
+
+			if isFireAlert || isSmokeAlert {
 				hasAlert = true
 				if d.Confidence >= topDetection.Confidence {
 					topDetection = d

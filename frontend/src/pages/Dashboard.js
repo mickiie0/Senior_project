@@ -312,7 +312,6 @@ const Dashboard = () => {
           todayDetectionsCount={todayDetections.length}
           fireTodayCount={fireTodayCount}
           smokeTodayCount={smokeTodayCount}
-          hasActiveFireAlert={hasActiveFireAlert}
         />
 
         <div style={styles.splitGrid}>

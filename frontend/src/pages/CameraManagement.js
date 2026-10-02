@@ -252,6 +252,8 @@ const CameraManagement = () => {
           activeCount={activeCount}
           inactiveCount={inactiveCount}
           uptimePercent={uptimePercent}
+          selectedFilter={selectedFilter}
+          onSelectFilter={setSelectedFilter}
         />
 
         <AddCameraForm

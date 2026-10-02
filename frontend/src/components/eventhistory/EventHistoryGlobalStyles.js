@@ -16,6 +16,9 @@ const EventHistoryGlobalStyles = () => (
       border-color: #2563eb !important;
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
     }
+    .dash-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
   `}</style>
 );
 

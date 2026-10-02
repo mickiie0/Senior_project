@@ -88,7 +88,7 @@ const getCachedUser = () => {
   try {
     const cached = localStorage.getItem('user_info');
     if (cached) return JSON.parse(cached);
-  } catch (_) {}
+  } catch (_) { }
   return null;
 };
 
@@ -146,7 +146,7 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
         });
         setCamerasMap(map);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Fetch and cache user info from /api/me
@@ -272,14 +272,14 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
             audioAlert.playFireAlert(4);
 
             sendDesktopNotification({
-              title: '🚨 ตรวจพบสัญญาณเพลิงไหม้ฉุกเฉิน!',
-              body: `ตรวจพบที่กล้อง ${newEvent.camera_id} กรุณาตรวจสอบทันที`,
+              title: '🚨 ตรวจพบสัญญาณเพลิงไหม้!',
+              body: `ตรวจพบที่กล้อง ${newEvent.camera_id} กรุณาตรวจสอบ`,
               icon: '/logo/fire.png',
               tag: newEvent.event_id,
               onClick: () => {
                 try {
                   window.focus();
-                } catch (e) {}
+                } catch (e) { }
                 setSelectedNotifEvent(newEvent);
               },
             });
@@ -537,7 +537,7 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
                   backgroundColor: unreadCount > 0 ? '#fef2f2' : '#ffffff',
                   borderColor: unreadCount > 0 ? '#fecaca' : '#e2e8f0',
                 }}
-                title="ศูนย์การแจ้งเตือนเหตุการณ์ฉุกเฉิน"
+                title="Notifications"
               >
                 <Bell
                   size={19}
