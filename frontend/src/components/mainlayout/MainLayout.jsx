@@ -25,6 +25,7 @@ import {
   Mail,
   ShieldCheck,
   MessageSquare,
+  Camera,
 } from 'lucide-react';
 import audioAlert from '../../utils/audioAlert';
 import {
@@ -365,6 +366,7 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
   const allMenuItems = [
     { path: '/dashboard', name: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
     { path: '/events', name: 'Event History', icon: History, adminOnly: false },
+    { path: '/snapshots', name: 'Snapshots', icon: Camera, adminOnly: true },
     { path: '/cameras', name: 'Camera Management', icon: Video, adminOnly: true },
     { path: '/discord', name: 'Discord Community', icon: MessageSquare, adminOnly: false },
   ];

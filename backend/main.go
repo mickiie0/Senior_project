@@ -5,6 +5,7 @@ import (
 	"fire_detection_web_app/internal/camera"
 	"fire_detection_web_app/internal/detection"
 	"fire_detection_web_app/internal/notification"
+	"fire_detection_web_app/internal/snapshot"
 	"fire_detection_web_app/internal/sse"
 
 	"log"
@@ -45,7 +46,7 @@ func ConnectDB() {
 func main() {
 	ConnectDB()
 
-	if err := DB.AutoMigrate(&auth.User{}, &camera.Camera{}, &detection.DetectionEvent{}, &detection.EventDetail{}, &notification.NotificationLog{}); err != nil {
+	if err := DB.AutoMigrate(&auth.User{}, &camera.Camera{}, &detection.DetectionEvent{}, &detection.EventDetail{}, &notification.NotificationLog{}, &snapshot.CameraSnapshot{}); err != nil {
 		log.Fatalf("Failed to auto migrate database tables: %v", err)
 	}
 
@@ -70,9 +71,11 @@ func main() {
 	}
 	log.Println("FK constraint fk_notif_event ensured on notification_logs.event_id")
 
-
 	log.Println("Starting Camera Ping Worker...")
 	camera.StartPingWorker(DB, 1*time.Minute)
+
+	log.Println("Starting Snapshot Retention Worker (90 days policy)...")
+	snapshot.StartCleanupWorker(DB, 24*time.Hour)
 
 	jwtSecret := viper.GetString("JWT_SECRET")
 	if jwtSecret == "" {
@@ -120,6 +123,11 @@ func main() {
 	detectionService := detection.NewService(detectionRepo, sseHub, discordService)
 	detectionHandler := detection.NewHandler(detectionService, sseHub)
 
+	// Snapshot Module
+	snapshotRepo := snapshot.NewRepository(DB)
+	snapshotService := snapshot.NewService(snapshotRepo)
+	snapshotHandler := snapshot.NewHandler(snapshotService)
+
 	authGroup := r.Group("/auth")
 	{
 		authGroup.POST("/register", handler.Register)
@@ -130,6 +138,7 @@ func main() {
 	cameraApi.Use(auth.CameraMiddleware())
 	{
 		cameraApi.POST("/detections", detectionHandler.ReceiveEvent)
+		cameraApi.POST("/snapshots", snapshotHandler.UploadSnapshot)
 	}
 
 	api := r.Group("/api")
@@ -164,6 +173,14 @@ func main() {
 				"invite_url": inviteURL,
 			})
 		})
+
+		adminSnapshots := api.Group("/snapshots")
+		adminSnapshots.Use(auth.RequireRole("admin"))
+		{
+			adminSnapshots.GET("", snapshotHandler.GetAll)
+			adminSnapshots.GET("/stats", snapshotHandler.GetStats)
+			adminSnapshots.DELETE("/:id", snapshotHandler.Delete)
+		}
 
 		adminCameras := api.Group("/cameras")
 		adminCameras.Use(auth.RequireRole("admin"))
