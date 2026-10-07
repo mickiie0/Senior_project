@@ -1,6 +1,3 @@
-// Web Audio API Synthesizer for Emergency Fire & Smoke Alerts
-// No external MP3/WAV files required. Works completely offline and synchronously.
-
 class AudioAlertManager {
   constructor() {
     this.audioCtx = null;
@@ -38,7 +35,6 @@ class AudioAlertManager {
     return this.audioCtx;
   }
 
-  // Dual-frequency emergency siren (Hi-Lo alarm sound)
   playFireAlert(durationSec = 4) {
     if (this.isMuted()) return;
 
@@ -55,7 +51,6 @@ class AudioAlertManager {
       osc.type = 'sawtooth';
       gainNode.gain.setValueAtTime(0.18, ctx.currentTime);
 
-      // Modulate frequency between 960Hz and 650Hz every 0.35s
       const now = ctx.currentTime;
       const cycleTime = 0.35;
       const cycles = Math.floor(durationSec / cycleTime);
@@ -66,7 +61,6 @@ class AudioAlertManager {
         osc.frequency.setValueAtTime(freq, time);
       }
 
-      // Smooth fade out at the end
       gainNode.gain.setValueAtTime(0.18, now + durationSec - 0.2);
       gainNode.gain.exponentialRampToValueAtTime(0.0001, now + durationSec);
 
@@ -87,7 +81,6 @@ class AudioAlertManager {
     }
   }
 
-  // Quick double warning beep
   playWarningBeep() {
     if (this.isMuted()) return;
 
@@ -126,7 +119,6 @@ class AudioAlertManager {
         osc.stop();
         osc.disconnect();
       } catch (e) {
-        // ignore if already stopped
       }
     });
     this.currentOscillators = [];

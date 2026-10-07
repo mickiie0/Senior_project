@@ -35,14 +35,13 @@ const FilterToolbar = ({
       </div>
 
       <div style={styles.filterGrid}>
-        {/* Search Input */}
         <div style={styles.filterItem}>
-          <label style={styles.filterLabel}>ค้นหาคำสำคัญ</label>
+          <label style={styles.filterLabel}>ค้นหา</label>
           <div style={styles.searchInputWrapper}>
             <Search size={16} color="#94a3b8" style={styles.searchIcon} />
             <input
               type="text"
-              placeholder="Event ID, รหัสกล้อง, สถานที่"
+              placeholder="รหัสเหตุการณ์, รหัสกล้อง, สถานที่"
               value={searchTerm}
               onChange={(e) => onSearchTermChange(e.target.value)}
               style={styles.searchInput}
@@ -56,7 +55,6 @@ const FilterToolbar = ({
           </div>
         </div>
 
-        {/* Type Filter */}
         <div style={styles.filterItem}>
           <label style={styles.filterLabel}>ประเภทเหตุการณ์</label>
           <select
@@ -65,14 +63,13 @@ const FilterToolbar = ({
             style={styles.selectInput}
             className="filter-input"
           >
-            <option value="all">ทั้งหมด (All Types)</option>
-            <option value="fire">🔥 เปลวไฟ (Fire)</option>
-            <option value="smoke">💨 กลุ่มควัน (Smoke)</option>
-            <option value="both">⚡ มีทั้งไฟและควัน (Both)</option>
+            <option value="all">เหตุการณ์ทั้งหมด</option>
+            <option value="fire">🔥 ไฟ (Fire)</option>
+            <option value="smoke">💨 ควัน (Smoke)</option>
+            <option value="both">💥 มีทั้งไฟและควัน</option>
           </select>
         </div>
 
-        {/* Camera Filter */}
         <div style={styles.filterItem}>
           <label style={styles.filterLabel}>กล้องวงจรปิด</label>
           <select
@@ -81,7 +78,7 @@ const FilterToolbar = ({
             style={styles.selectInput}
             className="filter-input"
           >
-            <option value="all">กล้องทุกตัว (All Cameras)</option>
+            <option value="all">กล้องทั้งหมด</option>
             {cameras.map((cam) => (
               <option key={cam.camera_id || cam.id} value={cam.camera_id || cam.id}>
                 {cam.camera_id || cam.id} - {cam.location} - {cam.sub_location}
@@ -90,7 +87,6 @@ const FilterToolbar = ({
           </select>
         </div>
 
-        {/* Date Range */}
         <div style={styles.filterItem}>
           <label style={styles.filterLabel}>ช่วงวันที่เกิดเหตุ</label>
           <div style={styles.dateRangeRow}>

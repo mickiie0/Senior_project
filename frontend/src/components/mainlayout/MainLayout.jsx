@@ -32,6 +32,10 @@ import {
   requestNotificationPermission,
   sendDesktopNotification,
 } from '../../utils/browserNotification';
+import {
+  formatThaiDateTime,
+  formatThaiTimeAgo,
+} from '../../utils/thaiDate';
 import EventDetailModal from '../dashboard/EventDetailModal';
 
 const API_URL = 'http://localhost:8080/api';
@@ -51,39 +55,9 @@ const hasFireOrSmoke = (event) => {
   );
 };
 
-const formatTimeAgoMini = (dateString) => {
-  if (!dateString) return '-';
-  const diffSec = Math.floor((new Date() - new Date(dateString)) / 1000);
-  if (diffSec < 60) return 'เมื่อสักครู่';
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} นาทีที่แล้ว`;
-  const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours} ชม.ที่แล้ว`;
-  return new Date(dateString).toLocaleDateString('th-TH', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
+const formatTimeAgoMini = (dateString) => formatThaiTimeAgo(dateString);
 
-const formatDateTimeThai = (dateString) => {
-  if (!dateString) return '-';
-  try {
-    const d = new Date(dateString);
-    if (isNaN(d.getTime())) return '-';
-    return d.toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  } catch {
-    return '-';
-  }
-};
+const formatDateTimeThai = (dateString) => formatThaiDateTime(dateString, { includeSeconds: true });
 
 const getCachedUser = () => {
   try {
@@ -97,22 +71,25 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
   const location = useLocation();
   const navigate = useNavigate();
 
-  // User state initialised from cache so header doesn't flicker or show 'User'
   const [user, setUser] = useState(getCachedUser);
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [readEventIds, setReadEventIds] = useState(() => {
+    try {
+      const stored = localStorage.getItem('read_notif_ids');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch (_) { return new Set(); }
+  });
   const [isMuted, setIsMuted] = useState(audioAlert.isMuted());
   const [logoError, setLogoError] = useState(false);
 
-  // Modals state
   const [showAccountInfo, setShowAccountInfo] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showSwitchAccountConfirm, setShowSwitchAccountConfirm] = useState(false);
 
-  // Change Password state
   const [showChangePw, setShowChangePw] = useState(false);
   const [changePwForm, setChangePwForm] = useState({
     current_password: '',
@@ -132,7 +109,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
   const notifMenuRef = useRef(null);
   const profileMenuRef = useRef(null);
 
-  // Fetch cameras for modal details
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -150,7 +126,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
       .catch(() => { });
   }, []);
 
-  // Fetch and cache user info from /api/me
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -198,7 +173,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
     navigate('/');
   };
 
-  // Close menus on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (notifMenuRef.current && !notifMenuRef.current.contains(e.target)) {
@@ -212,12 +186,10 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Request desktop notification permission on mount
   useEffect(() => {
     requestNotificationPermission();
   }, []);
 
-  // Fetch initial alerts
   const fetchInitialNotifications = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -232,17 +204,26 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
       setNotifications(alertEvents.slice(0, 15));
 
       const lastRead = localStorage.getItem('last_read_notif_time');
+      const storedIds = (() => {
+        try {
+          const s = localStorage.getItem('read_notif_ids');
+          return s ? new Set(JSON.parse(s)) : new Set();
+        } catch (_) { return new Set(); }
+      })();
+
       if (!lastRead) {
-        setUnreadCount(alertEvents.length);
+        const unread = alertEvents.filter((e) => !storedIds.has(String(e.event_id))).length;
+        setUnreadCount(unread);
       } else {
         const lastReadTime = new Date(lastRead).getTime();
         const unread = alertEvents.filter(
-          (e) => new Date(e.created_at).getTime() > lastReadTime
+          (e) =>
+            new Date(e.created_at).getTime() > lastReadTime &&
+            !storedIds.has(String(e.event_id))
         ).length;
         setUnreadCount(unread);
       }
     } catch (err) {
-      // silent
     }
   }, []);
 
@@ -250,7 +231,20 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
     fetchInitialNotifications();
   }, [fetchInitialNotifications]);
 
-  // Global SSE listener for notifications
+  const handleMarkEventAsRead = useCallback((eventId) => {
+    const id = String(eventId);
+    setReadEventIds((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      try {
+        localStorage.setItem('read_notif_ids', JSON.stringify([...next]));
+      } catch (_) {}
+      return next;
+    });
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -290,7 +284,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
         }
       });
     } catch (err) {
-      // silent
     }
 
     return () => {
@@ -300,6 +293,8 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
 
   const handleMarkAllAsRead = () => {
     localStorage.setItem('last_read_notif_time', new Date().toISOString());
+    localStorage.removeItem('read_notif_ids');
+    setReadEventIds(new Set());
     setUnreadCount(0);
   };
 
@@ -454,7 +449,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
         }
       `}</style>
 
-      {/* Sidebar */}
       <aside style={S.sidebar}>
         <div style={S.brand}>
           <div style={S.logoContainer}>
@@ -517,7 +511,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <div style={S.mainContent}>
         <header style={S.header}>
           <div style={S.headerLeft}>
@@ -527,7 +520,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
           </div>
 
           <div style={S.headerRight}>
-            {/* Notification Bell Button & Popover */}
             <div style={{ position: 'relative' }} ref={notifMenuRef}>
               <button
                 onClick={() => {
@@ -613,14 +605,25 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
                         const isF = (item.details || []).some((d) =>
                           (d.detection_type || '').toLowerCase().includes('fire')
                         );
+                        const isUnread = (() => {
+                          const lastRead = localStorage.getItem('last_read_notif_time');
+                          const alreadyReadById = readEventIds.has(String(item.event_id));
+                          if (alreadyReadById) return false;
+                          if (!lastRead) return true;
+                          return new Date(item.created_at).getTime() > new Date(lastRead).getTime();
+                        })();
                         return (
                           <div
                             key={item.event_id}
                             onClick={() => {
+                              if (isUnread) handleMarkEventAsRead(item.event_id);
                               setShowNotifMenu(false);
                               setSelectedNotifEvent(item);
                             }}
-                            style={S.notifItem}
+                            style={{
+                              ...S.notifItem,
+                              backgroundColor: isUnread ? '#fef9f9' : 'transparent',
+                            }}
                           >
                             <div
                               style={{
@@ -633,10 +636,10 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={S.notifItemTop}>
-                                <span style={S.notifItemTitle}>
+                                <span style={{ ...S.notifItemTitle, fontWeight: isUnread ? '700' : '500' }}>
                                   {isF ? 'ตรวจพบเปลวไฟ' : 'ตรวจพบกลุ่มควัน'}
                                 </span>
-                                <span style={S.notifItemTime}>
+                                <span style={S.notifItemTime} title={formatThaiDateTime(item.created_at)}>
                                   {formatTimeAgoMini(item.created_at)}
                                 </span>
                               </div>
@@ -644,6 +647,16 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
                                 กล้อง: <strong>{item.camera_id}</strong> • รหัส {item.event_id}
                               </div>
                             </div>
+                            {isUnread && (
+                              <span style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: '50%',
+                                backgroundColor: '#dc2626',
+                                flexShrink: 0,
+                                alignSelf: 'center',
+                              }} />
+                            )}
                           </div>
                         );
                       })
@@ -664,7 +677,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
               )}
             </div>
 
-            {/* User Profile Dropdown Button */}
             <div style={{ position: 'relative' }} ref={profileMenuRef}>
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -699,10 +711,8 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
                 <ChevronDown size={14} color="#64748b" />
               </button>
 
-              {/* Profile Dropdown Popover */}
               {showProfileMenu && (
                 <div style={S.profileModal}>
-                  {/* User Profile Header */}
                   <div style={S.modalHeader}>
                     <div style={S.largeAvatar}>
                       <Shield size={22} color="#2563eb" />
@@ -711,7 +721,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
                       <div style={{ fontWeight: '700', fontSize: '15px', color: '#0f172a' }}>
                         {username}
                       </div>
-                      {/* Email display in subtle gray text */}
                       {userEmail && (
                         <div
                           style={{
@@ -743,7 +752,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
 
                   <hr style={{ border: 'none', borderTop: '1px solid #f1f5f9', margin: '12px 0 8px 0' }} />
 
-                  {/* Menu Item 1: ข้อมูลบัญชี (Account Info) */}
                   <button
                     onClick={openAccountInfo}
                     className="profile-menu-item"
@@ -752,7 +760,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
                     <span>ข้อมูลบัญชี</span>
                   </button>
 
-                  {/* Menu Item 2: เปลี่ยนรหัสผ่าน (Change Password) */}
                   <button
                     onClick={openChangePw}
                     className="profile-menu-item"
@@ -761,7 +768,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
                     <span>เปลี่ยนรหัสผ่าน</span>
                   </button>
 
-                  {/* Menu Item 3: สลับบัญชี (Switch Account) */}
                   <button
                     onClick={() => {
                       setShowProfileMenu(false);
@@ -775,7 +781,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
 
                   <hr style={{ border: 'none', borderTop: '1px solid #f1f5f9', margin: '8px 0' }} />
 
-                  {/* Menu Item 4: ออกจากระบบ (Logout) */}
                   <button
                     onClick={() => {
                       setShowProfileMenu(false);
@@ -795,7 +800,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
         <main style={S.body}>{children}</main>
       </div>
 
-      {/* ─── Modal 1: ข้อมูลบัญชี (Account Info Modal) ─────────────────────────── */}
       {showAccountInfo && (
         <div
           style={S.modalOverlay}
@@ -898,7 +902,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
         </div>
       )}
 
-      {/* ─── Modal 2: เปลี่ยนรหัสผ่าน (Change Password Modal) ──────────────────── */}
       {showChangePw && (
         <div
           style={S.modalOverlay}
@@ -1045,7 +1048,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
         </div>
       )}
 
-      {/* ─── Modal 3: สลับบัญชี (Switch Account Confirm Modal) ─────────────────── */}
       {showSwitchAccountConfirm && (
         <div style={S.modalOverlay}>
           <div style={S.confirmModal}>
@@ -1078,7 +1080,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
         </div>
       )}
 
-      {/* ─── Modal 4: ยืนยันออกจากระบบ (Logout Confirm Modal) ───────────────────── */}
       {showLogoutConfirm && (
         <div style={S.modalOverlay}>
           <div style={S.confirmModal}>
@@ -1111,7 +1112,6 @@ const MainLayout = ({ title, children, username: propUsername, userRole: propRol
         </div>
       )}
 
-      {/* ─── Modal 5: รายละเอียดเหตุการณ์จากการแจ้งเตือน (Event Detail Modal) ────── */}
       {selectedNotifEvent && (
         <EventDetailModal
           selectedEvent={selectedNotifEvent}
@@ -1543,7 +1543,6 @@ const S = {
     padding: '32px 36px',
     flex: 1,
   },
-  // Modal Overlay
   modalOverlay: {
     position: 'fixed',
     inset: 0,
@@ -1565,7 +1564,6 @@ const S = {
     borderRadius: '6px',
     transition: 'all 0.15s',
   },
-  // Account Info Modal
   infoModal: {
     backgroundColor: '#ffffff',
     borderRadius: '16px',
@@ -1625,7 +1623,6 @@ const S = {
     cursor: 'pointer',
     transition: 'all 0.15s',
   },
-  // Change Password Modal
   changePwModal: {
     backgroundColor: '#ffffff',
     borderRadius: '16px',
@@ -1704,7 +1701,6 @@ const S = {
     fontWeight: '600',
     transition: 'all 0.15s',
   },
-  // Confirm Modals (Logout / Switch Account)
   confirmModal: {
     backgroundColor: '#ffffff',
     borderRadius: '16px',

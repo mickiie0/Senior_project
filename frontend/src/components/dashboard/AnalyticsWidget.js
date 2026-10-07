@@ -18,13 +18,13 @@ const AnalyticsWidget = ({
       <div style={styles.sideCardHeader}>
         <div style={styles.cardTitleWithIcon}>
           <Activity size={17} color="#2563eb" />
-          <h3 style={styles.sideCardTitle}>สัดส่วนการตรวจจับ (Analytics)</h3>
+          <h3 style={styles.sideCardTitle}>สัดส่วนการตรวจจับ</h3>
         </div>
       </div>
 
       <div style={styles.analyticsBody}>
         <div style={styles.ratioHeader}>
-          <span style={styles.subLabel}>จำนวนวัตถุที่ตรวจพบสะสม</span>
+          <span style={styles.subLabel}>จำนวนวัตถุที่ตรวจพบ</span>
           <span style={styles.subValue}>
             รวม {total} ครั้ง ({recentDetectionsCount} เหตุการณ์)
           </span>
@@ -71,7 +71,7 @@ const AnalyticsWidget = ({
           <div style={styles.confidenceMetricBox}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '13px', color: '#475569', fontWeight: '500' }}>
-                ความแม่นยำเฉลี่ย (Avg Confidence)
+                ความมั่นใจเฉลี่ย
               </span>
               <span style={{ fontSize: '15px', color: '#0f172a', fontWeight: '700' }}>
                 {avgConfidence > 0 ? `${avgConfidence.toFixed(1)}%` : '-'}

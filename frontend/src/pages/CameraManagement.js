@@ -27,7 +27,7 @@ const CameraManagement = () => {
   const [editingCamera, setEditingCamera] = useState(null);
 
   const [isTestingIP, setIsTestingIP] = useState(false);
-  const [testResult, setTestResult] = useState(null); // { success: boolean, message: string }
+  const [testResult, setTestResult] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [createData, setCreateData] = useState({
@@ -190,14 +190,11 @@ const CameraManagement = () => {
     }
   };
 
-  // Metrics
   const totalCount = cameras.length;
   const activeCount = cameras.filter((c) => c.status === CAMERA_STATUS.ACTIVE).length;
   const inactiveCount = cameras.filter((c) => c.status === CAMERA_STATUS.INACTIVE).length;
   const uptimePercent = totalCount > 0 ? Math.round((activeCount / totalCount) * 100) : 0;
 
-  // Preview of the camera_id that will likely be assigned on create
-  // (mirrors the backend's BeforeCreate logic: highest existing "CAM-xxx" + 1)
   const nextCameraIdPreview = useMemo(() => {
     let maxSeq = 0;
     cameras.forEach((cam) => {
@@ -210,15 +207,12 @@ const CameraManagement = () => {
     return `CAM-${String(maxSeq + 1).padStart(3, '0')}`;
   }, [cameras]);
 
-  // Filtered cameras
   const filteredCameras = useMemo(() => {
     return cameras.filter((cam) => {
-      // 1. Status Filter
       if (selectedFilter !== 'all' && cam.status !== selectedFilter) {
         return false;
       }
 
-      // 2. Search Filter (Camera ID, IP, Location, Sub-location)
       if (searchTerm.trim()) {
         const q = searchTerm.toLowerCase().trim();
         const id = (cam.camera_id || '').toLowerCase();
@@ -246,7 +240,6 @@ const CameraManagement = () => {
       <div style={styles.page}>
         <CameraManagementHeader isRefreshing={isRefreshing} onRefresh={() => fetchCameras(true)} />
 
-        {/* 3 KPI Summary Cards (maintenance status removed) */}
         <CameraSummaryCards
           totalCount={totalCount}
           activeCount={activeCount}

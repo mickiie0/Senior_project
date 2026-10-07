@@ -96,7 +96,6 @@ func (s *discordService) SendFireAlertAsync(data EventAlertData) {
 			log.Printf("[Discord] Alert sent successfully for event %s", data.EventID)
 		}
 
-		// Save to notification_logs
 		if s.repo != nil {
 			maskedWebhook := maskURL(s.webhookURL)
 			summaryMsg := fmt.Sprintf("Discord alert for %s at camera %s (%s)", data.EventID, data.CameraID, data.DetectionType)
@@ -119,7 +118,8 @@ func (s *discordService) sendAlert(data EventAlertData) error {
 
 	loc := time.FixedZone("ICT", 7*3600)
 	localTime := data.CreatedAt.In(loc)
-	timeStr := localTime.Format("02/01/2006 15:04:05")
+	thaiMonths := []string{"", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."}
+	timeStr := fmt.Sprintf("%d %s %d เวลา %s น.", localTime.Day(), thaiMonths[localTime.Month()], localTime.Year()+543, localTime.Format("15:04:05"))
 
 	var hasFire bool
 	var hasSmoke bool
@@ -158,9 +158,9 @@ func (s *discordService) sendAlert(data EventAlertData) error {
 	confPercent := fmt.Sprintf("**%.1f%%**", data.Confidence*100)
 
 	if hasFire && hasSmoke {
-		typeEmoji = "🚨"
+		typeEmoji = "💥"
 		typeLabel = "ไฟและควัน (FIRE & SMOKE)"
-		color = 14428710
+		color = 14972705
 		confPercent = fmt.Sprintf("FIRE: **%.1f%%** | SMOKE: **%.1f%%**", maxFireConf*100, maxSmokeConf*100)
 	} else if hasSmoke {
 		typeEmoji = "💨"
@@ -177,7 +177,7 @@ func (s *discordService) sendAlert(data EventAlertData) error {
 	camLocation := data.CameraID
 	if data.Location != "" {
 		if data.SubLocation != "" {
-			camLocation = fmt.Sprintf("%s (%s - %s)", data.CameraID, data.Location, data.SubLocation)
+			camLocation = fmt.Sprintf("%s | %s - %s", data.CameraID, data.Location, data.SubLocation)
 		} else {
 			camLocation = fmt.Sprintf("%s (%s)", data.CameraID, data.Location)
 		}
@@ -195,14 +195,14 @@ func (s *discordService) sendAlert(data EventAlertData) error {
 		Description: "ระบบตรวจจับไฟและควันจากกล้องวงจรปิด CCTV\nกรุณาตรวจสอบสถานการณ์ทันที!",
 		Color:       color,
 		Fields: []DiscordEmbedField{
-			{Name: "รหัสเหตุการณ์ (Event ID)", Value: fmt.Sprintf("`%s`", data.EventID), Inline: true},
+			{Name: "รหัสเหตุการณ์", Value: fmt.Sprintf("`%s`", data.EventID), Inline: true},
 			{Name: "กล้องที่ตรวจพบ", Value: camLocation, Inline: true},
 			{Name: "", Value: "", Inline: false},
 			{Name: fmt.Sprintf("%s ประเภทการตรวจจับ", typeEmoji), Value: fmt.Sprintf("**%s**", typeLabel), Inline: true},
-			{Name: "ความมั่นใจ (Confidence)", Value: confPercent, Inline: true},
+			{Name: "ความมั่นใจ", Value: confPercent, Inline: true},
 			{Name: "", Value: "", Inline: false},
-			{Name: "วัน-เวลาที่ตรวจพบ", Value: timeStr, Inline: true},
-			{Name: "ระบบมอนิเตอร์ออนไลน์ (Web System)", Value: fmt.Sprintf("[🔗 คลิกที่นี่เพื่อเปิดดูเหตุการณ์บนเว็บไซต์](%s)", webEventsURL), Inline: false},
+			{Name: "วันและเวลาที่ตรวจพบ", Value: timeStr, Inline: true},
+			{Name: "ระบบตรวจจับไฟและควัน", Value: fmt.Sprintf("[🔗 คลิกที่นี่เพื่อเปิดดูเหตุการณ์บนเว็บไซต์](%s)", webEventsURL), Inline: false},
 		},
 		Footer: DiscordEmbedFooter{
 			Text: "Fire & Smoke Detection System from CCTV • Automated Emergency Alert",
@@ -257,7 +257,7 @@ func (s *discordService) sendJSON(payload DiscordPayload) error {
 func (s *discordService) sendMultipart(payload DiscordPayload, filePath string) error {
 	fileData, err := os.ReadFile(filePath)
 	if err != nil {
-		return s.sendJSON(payload) // fallback to JSON
+		return s.sendJSON(payload)
 	}
 
 	filename := filepath.Base(filePath)

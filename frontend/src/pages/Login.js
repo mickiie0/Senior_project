@@ -92,7 +92,6 @@ const Login = () => {
       `}</style>
 
       <div style={styles.cardWrapper}>
-        {/* Brand Section */}
         <div style={styles.brandSection}>
           <div style={styles.brandLogoWrap}>
             {!logoError ? (
@@ -114,7 +113,6 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Login Card */}
         <div style={styles.card}>
           <div style={styles.header}>
             <h1 style={styles.title}>เข้าสู่ระบบ</h1>
@@ -218,7 +216,6 @@ const Login = () => {
           </div>
         </div>
 
-        {/* System security footer note */}
         <div style={styles.systemFooter}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
             <ShieldCheck size={14} color="#64748b" /> Object Detection System v1.0
@@ -226,7 +223,6 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Forgot Password Modal */}
       {showForgotModal && (
         <div
           style={{

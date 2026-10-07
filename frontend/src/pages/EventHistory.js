@@ -28,14 +28,12 @@ const EventHistory = () => {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Filters State
   const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all'); // 'all' | 'fire' | 'smoke' | 'both'
+  const [typeFilter, setTypeFilter] = useState('all');
   const [cameraFilter, setCameraFilter] = useState('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  // Pagination & Modal State
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
@@ -95,7 +93,6 @@ const EventHistory = () => {
     fetchData();
   }, [fetchData]);
 
-  // Fast camera map by ID
   const camerasMap = useMemo(() => {
     const map = {};
     cameras.forEach((cam) => {
@@ -105,7 +102,6 @@ const EventHistory = () => {
     return map;
   }, [cameras]);
 
-  // Global counts
   const { totalCount, fireCount, smokeCount, todayCount } = useMemo(() => {
     const todayStr = new Date().toDateString();
     let fCount = 0;
@@ -129,13 +125,11 @@ const EventHistory = () => {
     };
   }, [events]);
 
-  // Filtered Events
   const filteredEvents = useMemo(() => {
     return events.filter((evt) => {
       const parsed = parseEventDetections(evt);
       const cam = camerasMap[evt.camera_id];
 
-      // 1. Search filter (Event ID, Camera ID, Location, Sub-location)
       if (searchTerm.trim()) {
         const q = searchTerm.toLowerCase().trim();
         const eventId = (evt.event_id || '').toLowerCase();
@@ -149,17 +143,14 @@ const EventHistory = () => {
         if (!matches) return false;
       }
 
-      // 2. Type filter
       if (typeFilter === 'fire' && !parsed.hasFire) return false;
       if (typeFilter === 'smoke' && !parsed.hasSmoke) return false;
       if (typeFilter === 'both' && !parsed.hasBoth) return false;
 
-      // 3. Camera filter
       if (cameraFilter !== 'all' && evt.camera_id !== cameraFilter) {
         return false;
       }
 
-      // 4. Date range filter
       if (startDate && evt.created_at) {
         const eventDate = new Date(evt.created_at);
         const [sy, sm, sd] = startDate.split('-').map(Number);
@@ -178,7 +169,6 @@ const EventHistory = () => {
     });
   }, [events, searchTerm, typeFilter, cameraFilter, startDate, endDate, camerasMap]);
 
-  // Today date string (YYYY-MM-DD)
   const todayDateStr = useMemo(() => {
     const now = new Date();
     const year = now.getFullYear();
@@ -187,7 +177,6 @@ const EventHistory = () => {
     return `${year}-${month}-${day}`;
   }, []);
 
-  // Determine which summary card is active
   const selectedFilter = useMemo(() => {
     if (startDate === todayDateStr && endDate === todayDateStr && typeFilter === 'all') {
       return 'today';
@@ -204,7 +193,6 @@ const EventHistory = () => {
     return '';
   }, [startDate, endDate, typeFilter, todayDateStr, cameraFilter, searchTerm]);
 
-  // Quick filter handler when clicking summary cards
   const handleSelectFilter = useCallback(
     (key) => {
       if (key === 'all') {
@@ -230,19 +218,16 @@ const EventHistory = () => {
     [todayDateStr]
   );
 
-  // Reset pagination when filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, typeFilter, cameraFilter, startDate, endDate]);
 
-  // Paginated Events
   const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE) || 1;
   const paginatedEvents = useMemo(() => {
     const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredEvents.slice(startIdx, startIdx + ITEMS_PER_PAGE);
   }, [filteredEvents, currentPage]);
 
-  // Reset filters
   const handleResetFilters = () => {
     setSearchTerm('');
     setTypeFilter('all');
@@ -251,7 +236,6 @@ const EventHistory = () => {
     setEndDate('');
   };
 
-  // AI confidence scores are only shown to admin users
   const isAdmin = user?.role?.toLowerCase() === 'admin';
 
   return (

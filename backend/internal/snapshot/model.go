@@ -14,10 +14,9 @@ type CameraSnapshot struct {
 	ID         string        `gorm:"type:varchar(40);primaryKey" json:"id"`
 	CameraID   string        `gorm:"type:varchar(20);not null;index" json:"camera_id"`
 	Camera     camera.Camera `gorm:"foreignKey:CameraID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;" json:"camera,omitempty"`
-	FilePath   string        `gorm:"type:varchar(255);not null" json:"file_path"`
-	FileSize   int64         `json:"file_size"`
-	CapturedAt time.Time     `gorm:"index" json:"captured_at"`
-	CreatedAt  time.Time     `gorm:"autoCreateTime;index" json:"created_at"`
+	FilePath  string        `gorm:"type:varchar(255);not null" json:"file_path"`
+	FileSize  int64         `json:"file_size"`
+	CreatedAt time.Time     `gorm:"autoCreateTime;index" json:"created_at"`
 }
 
 func (CameraSnapshot) TableName() string {
@@ -29,7 +28,6 @@ func (s *CameraSnapshot) BeforeCreate(tx *gorm.DB) (err error) {
 		return nil
 	}
 
-	// SNP-YYYYMMDDHHMMSS-XXXX
 	t := time.Now()
 	randomSuffix := rand.Intn(9000) + 1000
 	s.ID = fmt.Sprintf("SNP-%s-%04d", t.Format("20060102150405"), randomSuffix)
@@ -39,7 +37,6 @@ func (s *CameraSnapshot) BeforeCreate(tx *gorm.DB) (err error) {
 type CreateSnapshotJSONInput struct {
 	CameraID    string `json:"camera_id" binding:"required"`
 	ImageBase64 string `json:"image_base64" binding:"required"`
-	CapturedAt  string `json:"captured_at"`
 }
 
 type SnapshotQuery struct {

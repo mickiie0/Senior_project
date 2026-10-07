@@ -11,7 +11,7 @@ import ChannelDirectory from '../components/discordcommunity/ChannelDirectory';
 import styles from '../components/discordcommunity/DiscordCommunityStyles';
 
 const API_URL = 'http://localhost:8080/api';
-const DEFAULT_DISCORD_INVITE = 'https://discord.gg/vKzVv8s4';
+const DEFAULT_DISCORD_INVITE = 'https://discord.gg/4nCbDqyZf';
 
 const DiscordCommunity = () => {
   const [inviteUrl, setInviteUrl] = useState(DEFAULT_DISCORD_INVITE);
@@ -22,13 +22,11 @@ const DiscordCommunity = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    // Fetch user info
     axios
       .get(`${API_URL}/me`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => setUser(res.data))
       .catch(() => {});
 
-    // Fetch Discord invite URL from backend
     axios
       .get(`${API_URL}/community/discord`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -39,7 +37,6 @@ const DiscordCommunity = () => {
         }
       })
       .catch(() => {
-        // Fallback to default
       });
   }, []);
 

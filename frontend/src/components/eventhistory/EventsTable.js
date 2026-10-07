@@ -13,7 +13,14 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import styles from './EventHistoryStyles';
-import { ITEMS_PER_PAGE, formatTimeAgo, getFullImageUrl, parseEventDetections } from './EventHistoryHelpers';
+import {
+  ITEMS_PER_PAGE,
+  formatTimeAgo,
+  formatThaiDate,
+  formatThaiTime,
+  getFullImageUrl,
+  parseEventDetections,
+} from './EventHistoryHelpers';
 
 const TypeBadges = ({ types }) => (
   <div style={styles.typeBadgesContainer}>
@@ -73,7 +80,6 @@ const EventTableRow = ({ item, index, camInfo, onSelectEvent, isAdmin }) => {
 
   return (
     <tr style={styles.tableRow} className="interactive-row">
-      {/* Column 1: Snapshot Thumbnail (Fixed Strict Size: 52px x 52px) */}
       <td style={{ ...styles.td, width: '68px', textAlign: 'center' }}>
         <div style={styles.thumbWrapper} onClick={() => onSelectEvent(item)} title="คลิกเพื่อดูภาพขยาย">
           {fullImgUrl ? (
@@ -100,25 +106,21 @@ const EventTableRow = ({ item, index, camInfo, onSelectEvent, isAdmin }) => {
         </div>
       </td>
 
-      {/* Column 2: Event ID & Sub-info */}
       <td style={styles.td}>
         <div style={styles.eventIdText}>{item.event_id || `EVT-#${index + 1}`}</div>
         <div style={styles.subTextMuted}>{formatTimeAgo(item.created_at)}</div>
       </td>
 
-      {/* Column 3: Types Detected */}
       <td style={styles.td}>
         <TypeBadges types={parsed.types} />
       </td>
 
-      {/* Column 4: Confidence Score for Each Detected Type (admin only) */}
       {isAdmin && (
         <td style={styles.td}>
           <ConfidenceColumn types={parsed.types} />
         </td>
       )}
 
-      {/* Column 5: Camera ID & Location */}
       <td style={styles.td}>
         <div style={styles.locationBlock}>
           <div style={styles.cameraName}>
@@ -132,17 +134,15 @@ const EventTableRow = ({ item, index, camInfo, onSelectEvent, isAdmin }) => {
         </div>
       </td>
 
-      {/* Column 6: Timestamp */}
       <td style={styles.td}>
-        <div style={styles.timeMain}>
-          {item.created_at ? new Date(item.created_at).toLocaleTimeString() : '-'}
+        <div style={styles.dateMain}>
+          {formatThaiDate(item.created_at)}
         </div>
-        <div style={styles.subTextMuted}>
-          {item.created_at ? new Date(item.created_at).toLocaleDateString('th-TH') : '-'}
+        <div style={styles.timeSub}>
+          {formatThaiTime(item.created_at)}
         </div>
       </td>
 
-      {/* Column 7: Action Button */}
       <td style={{ ...styles.td, textAlign: 'center' }}>
         <button
           onClick={() => onSelectEvent(item)}
@@ -256,13 +256,13 @@ const EventsTable = ({
           <table style={styles.table}>
             <thead>
               <tr style={styles.tableHeadRow}>
-                <th style={{ ...styles.th, width: '68px', textAlign: 'center' }}>ภาพ Snapshot</th>
-                <th style={styles.th}>Event ID</th>
+                <th style={{ ...styles.th, width: '68px', textAlign: 'center' }}>รูปภาพ</th>
+                <th style={styles.th}>รหัสเหตุการณ์</th>
                 <th style={styles.th}>ประเภทที่ตรวจพบ</th>
-                {isAdmin && <th style={styles.th}>ความมั่นใจ (AI)</th>}
-                <th style={styles.th}>กล้อง & ตำแหน่ง</th>
+                {isAdmin && <th style={styles.th}>ความมั่นใจ</th>}
+                <th style={styles.th}>กล้องและตำแหน่ง</th>
                 <th style={styles.th}>วันและเวลาที่บันทึก</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>การกระทำ</th>
+                <th style={{ ...styles.th, textAlign: 'center' }}></th>
               </tr>
             </thead>
             <tbody>

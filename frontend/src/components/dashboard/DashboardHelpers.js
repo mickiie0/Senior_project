@@ -1,7 +1,13 @@
-// Constants
+import {
+  formatThaiDate,
+  formatThaiTime,
+  formatThaiDateTime,
+  formatThaiTimeAgo,
+} from '../../utils/thaiDate';
+
 export const API_BASE_URL = 'http://localhost:8080/api';
 export const BACKEND_BASE_URL = 'http://localhost:8080';
-export const POLL_INTERVAL_MS = 20000; // Fallback polling interval when SSE is active
+export const POLL_INTERVAL_MS = 20000;
 export const ACTIVE_CAMERA_STATUS = 'active';
 
 export const getSSEUrl = () => {
@@ -26,31 +32,12 @@ export const getFullImageUrl = (url) => {
   return `${BACKEND_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
-export const formatTimeAgo = (dateString) => {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffSec = Math.floor((now - date) / 1000);
+export { formatThaiDate, formatThaiTime, formatThaiDateTime, formatThaiTimeAgo };
 
-  if (diffSec < 60) return 'เมื่อสักครู่';
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} นาทีที่แล้ว`;
-  const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours} ชั่วโมงที่แล้ว`;
-  return date.toLocaleDateString('th-TH', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
+export const formatTimeAgo = formatThaiTimeAgo;
 
-export const formatClock = (date) => {
-  if (!date) return '-';
-  return date.toLocaleTimeString('th-TH', { hour12: false });
-};
+export const formatClock = (date) => formatThaiTime(date, true);
 
-// Parses all detection types and confidence scores from an event
 export const parseEventDetections = (event) => {
   if (!event) {
     return {

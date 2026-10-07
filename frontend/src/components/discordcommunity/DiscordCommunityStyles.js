@@ -8,7 +8,6 @@ const styles = {
     paddingBottom: '40px',
   },
 
-  // Hero Card
   heroCard: {
     position: 'relative',
     backgroundColor: '#0b1329',
@@ -102,7 +101,6 @@ const styles = {
     transition: 'all 0.2s ease',
   },
 
-  // Mockup Section
   previewSection: {
     display: 'flex',
     flexDirection: 'column',
@@ -278,7 +276,6 @@ const styles = {
     marginTop: '4px',
   },
 
-  // 4 Features Grid
   featuresGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
@@ -313,7 +310,6 @@ const styles = {
     lineHeight: '1.6',
   },
 
-  // Info Split Grid
   infoSplitGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',

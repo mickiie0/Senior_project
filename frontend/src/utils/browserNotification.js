@@ -1,5 +1,3 @@
-// Desktop/Web Browser Notification Utility
-
 export const isNotificationSupported = () => {
   return typeof window !== 'undefined' && 'Notification' in window;
 };

@@ -14,7 +14,6 @@ const StatsCards = ({
 }) => {
   return (
     <div style={styles.statsGrid}>
-      {/* Card 1: Total Cameras */}
       <div style={styles.statCard} className="dash-card">
         <div style={styles.statCardHeader}>
           <span style={styles.statCardTitle}>กล้องทั้งหมดในระบบ</span>
@@ -30,7 +29,6 @@ const StatsCards = ({
         </div>
       </div>
 
-      {/* Card 2: Camera Availability */}
       <div style={styles.statCard} className="dash-card">
         <div style={styles.statCardHeader}>
           <span style={styles.statCardTitle}>อัตรากล้องพร้อมใช้งาน</span>
@@ -54,7 +52,6 @@ const StatsCards = ({
         </div>
       </div>
 
-      {/* Card 3: Detections Today */}
       <div style={styles.statCard} className="dash-card">
         <div style={styles.statCardHeader}>
           <span style={styles.statCardTitle}>ตรวจพบวันนี้</span>

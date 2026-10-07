@@ -18,7 +18,6 @@ func NewHandler(service Service) *Handler {
 func (h *Handler) UploadSnapshot(c *gin.Context) {
 	contentType := c.GetHeader("Content-Type")
 
-	// Support Multipart Form Upload
 	if strings.Contains(contentType, "multipart/form-data") {
 		cameraID := c.PostForm("camera_id")
 		if cameraID == "" {
@@ -32,8 +31,7 @@ func (h *Handler) UploadSnapshot(c *gin.Context) {
 			return
 		}
 
-		capturedAtStr := c.PostForm("captured_at")
-		snapshot, err := h.service.SaveSnapshotMultipart(cameraID, fileHeader, capturedAtStr)
+		snapshot, err := h.service.SaveSnapshotMultipart(cameraID, fileHeader)
 		if err != nil {
 			if err.Error() == "camera_id not found in system" {
 				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -53,14 +51,13 @@ func (h *Handler) UploadSnapshot(c *gin.Context) {
 		return
 	}
 
-	// Support JSON Upload with base64
 	var input CreateSnapshotJSONInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	snapshot, err := h.service.SaveSnapshotBase64(input.CameraID, input.ImageBase64, input.CapturedAt)
+	snapshot, err := h.service.SaveSnapshotBase64(input.CameraID, input.ImageBase64)
 	if err != nil {
 		if err.Error() == "camera_id not found in system" {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})

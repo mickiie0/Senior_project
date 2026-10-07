@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"math/rand"
 	"mime/multipart"
 	"os"
 	"path/filepath"
@@ -15,8 +14,8 @@ import (
 )
 
 type Service interface {
-	SaveSnapshotMultipart(cameraID string, file *multipart.FileHeader, capturedAtStr string) (*CameraSnapshot, error)
-	SaveSnapshotBase64(cameraID string, base64Data string, capturedAtStr string) (*CameraSnapshot, error)
+	SaveSnapshotMultipart(cameraID string, file *multipart.FileHeader) (*CameraSnapshot, error)
+	SaveSnapshotBase64(cameraID string, base64Data string) (*CameraSnapshot, error)
 	ListSnapshots(query SnapshotQuery) (*SnapshotListResponse, error)
 	GetStats() (*SnapshotStats, error)
 	DeleteSnapshot(id string) error
@@ -30,42 +29,29 @@ func NewService(repo Repository) Service {
 	return &service{repo: repo}
 }
 
-func (s *service) parseCapturedAt(capturedAtStr string) time.Time {
-	if capturedAtStr != "" {
-		if t, err := time.Parse(time.RFC3339, capturedAtStr); err == nil {
-			return t
-		}
-		if t, err := time.Parse("2006-01-02 15:04:05", capturedAtStr); err == nil {
-			return t
-		}
-	}
-	return time.Now()
-}
-
-func (s *service) generateFilePath(cameraID string, capturedAt time.Time) (string, string, error) {
+func (s *service) generateFilePath(cameraID string) (string, string, error) {
 	loc, err := time.LoadLocation("Asia/Bangkok")
 	if err != nil {
 		loc = time.FixedZone("ICT", 7*3600)
 	}
 
-	localTime := capturedAt.In(loc)
+	localTime := time.Now().In(loc)
 	dateDir := localTime.Format("2006-01-02")
-	timeStr := localTime.Format("20060102_150405")
-	randomSuffix := rand.Intn(900) + 100
+	timeStr := localTime.Format("2006-01-02_15-04-05")
 
 	dirPath := filepath.Join("./uploads", "snapshot", dateDir, cameraID)
 	if err := os.MkdirAll(dirPath, 0755); err != nil {
 		return "", "", fmt.Errorf("failed to create directory: %w", err)
 	}
 
-	filename := fmt.Sprintf("%s_%s_%03d.jpg", cameraID, timeStr, randomSuffix)
+	filename := fmt.Sprintf("%s_%s.jpg", cameraID, timeStr)
 	diskPath := filepath.Join(dirPath, filename)
 	urlPath := fmt.Sprintf("/uploads/snapshot/%s/%s/%s", dateDir, cameraID, filename)
 
 	return diskPath, urlPath, nil
 }
 
-func (s *service) SaveSnapshotMultipart(cameraID string, fileHeader *multipart.FileHeader, capturedAtStr string) (*CameraSnapshot, error) {
+func (s *service) SaveSnapshotMultipart(cameraID string, fileHeader *multipart.FileHeader) (*CameraSnapshot, error) {
 	exists, err := s.repo.ExistsCamera(cameraID)
 	if err != nil {
 		return nil, err
@@ -74,8 +60,7 @@ func (s *service) SaveSnapshotMultipart(cameraID string, fileHeader *multipart.F
 		return nil, errors.New("camera_id not found in system")
 	}
 
-	capturedAt := s.parseCapturedAt(capturedAtStr)
-	diskPath, urlPath, err := s.generateFilePath(cameraID, capturedAt)
+	diskPath, urlPath, err := s.generateFilePath(cameraID)
 	if err != nil {
 		return nil, err
 	}
@@ -99,10 +84,9 @@ func (s *service) SaveSnapshotMultipart(cameraID string, fileHeader *multipart.F
 	}
 
 	snapshot := &CameraSnapshot{
-		CameraID:   cameraID,
-		FilePath:   urlPath, // relative URL path served by Gin
-		FileSize:   size,
-		CapturedAt: capturedAt,
+		CameraID: cameraID,
+		FilePath: urlPath,
+		FileSize: size,
 	}
 
 	if err := s.repo.Create(snapshot); err != nil {
@@ -113,7 +97,7 @@ func (s *service) SaveSnapshotMultipart(cameraID string, fileHeader *multipart.F
 	return snapshot, nil
 }
 
-func (s *service) SaveSnapshotBase64(cameraID string, base64Data string, capturedAtStr string) (*CameraSnapshot, error) {
+func (s *service) SaveSnapshotBase64(cameraID string, base64Data string) (*CameraSnapshot, error) {
 	exists, err := s.repo.ExistsCamera(cameraID)
 	if err != nil {
 		return nil, err
@@ -131,8 +115,7 @@ func (s *service) SaveSnapshotBase64(cameraID string, base64Data string, capture
 		return nil, errors.New("invalid base64 image data")
 	}
 
-	capturedAt := s.parseCapturedAt(capturedAtStr)
-	diskPath, urlPath, err := s.generateFilePath(cameraID, capturedAt)
+	diskPath, urlPath, err := s.generateFilePath(cameraID)
 	if err != nil {
 		return nil, err
 	}
@@ -142,10 +125,9 @@ func (s *service) SaveSnapshotBase64(cameraID string, base64Data string, capture
 	}
 
 	snapshot := &CameraSnapshot{
-		CameraID:   cameraID,
-		FilePath:   urlPath,
-		FileSize:   int64(len(decodedBytes)),
-		CapturedAt: capturedAt,
+		CameraID: cameraID,
+		FilePath: urlPath,
+		FileSize: int64(len(decodedBytes)),
 	}
 
 	if err := s.repo.Create(snapshot); err != nil {
@@ -193,7 +175,6 @@ func (s *service) DeleteSnapshot(id string) error {
 		return err
 	}
 
-	// Remove physical file from disk
 	relPath := strings.TrimPrefix(snp.FilePath, "/")
 	if strings.HasPrefix(relPath, "uploads/snapshot") || strings.HasPrefix(relPath, "uploads\\snapshot") {
 		_ = os.Remove(relPath)

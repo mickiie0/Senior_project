@@ -9,7 +9,6 @@ const EditCameraModal = ({ isOpen, editingCamera, onChange, onSubmit, onClose })
   return (
     <div style={styles.modalBackdrop} onClick={onClose}>
       <div style={styles.modalContainer} onClick={(e) => e.stopPropagation()}>
-        {/* Modal Header */}
         <div style={styles.modalHeader}>
           <div style={styles.modalHeaderTitleRow}>
             <Camera size={20} color="#2563eb" />
@@ -25,7 +24,6 @@ const EditCameraModal = ({ isOpen, editingCamera, onChange, onSubmit, onClose })
           </button>
         </div>
 
-        {/* Modal Body */}
         <form onSubmit={onSubmit}>
           <div style={styles.modalBody}>
             <div style={styles.modalFieldGroup}>
@@ -78,7 +76,6 @@ const EditCameraModal = ({ isOpen, editingCamera, onChange, onSubmit, onClose })
             </div>
           </div>
 
-          {/* Modal Footer */}
           <div style={styles.modalFooter}>
             <button type="button" onClick={onClose} style={styles.modalCancelBtn}>
               ยกเลิก

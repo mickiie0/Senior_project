@@ -11,10 +11,10 @@ const DashboardHeader = ({ lastUpdated, isRefreshing, onRefresh, sseStatus = 'co
   const pillBg = isSseConnected ? '#ecfdf5' : isSseConnecting ? '#fffbeb' : '#f1f5f9';
   const pillBorder = isSseConnected ? '#a7f3d0' : isSseConnecting ? '#fde68a' : '#cbd5e1';
   const statusLabel = isSseConnected
-    ? 'SSE Live Stream (Real-time)'
+    ? 'SSE Live Stream'
     : isSseConnecting
     ? 'กำลังเชื่อมต่อ SSE...'
-    : 'ระบบเฝ้าระวัง (Polling Fallback)';
+    : 'ระบบเฝ้าระวัง Polling Fallback';
 
   return (
     <div style={styles.headerBar}>

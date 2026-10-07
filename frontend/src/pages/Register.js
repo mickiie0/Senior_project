@@ -103,7 +103,6 @@ const Register = () => {
       `}</style>
 
       <div style={styles.cardWrapper}>
-        {/* Brand Section */}
         <div style={styles.brandSection}>
           <div style={styles.brandLogoWrap}>
             {!logoError ? (
@@ -125,7 +124,6 @@ const Register = () => {
           </div>
         </div>
 
-        {/* Register Card */}
         <div style={styles.card}>
           <div style={styles.header}>
             <h1 style={styles.title}>สมัครสมาชิก</h1>
@@ -257,7 +255,6 @@ const Register = () => {
           </div>
         </div>
 
-        {/* System security footer note */}
         <div style={styles.systemFooter}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
             <ShieldCheck size={14} color="#64748b" /> Object Detection System v1.0
@@ -265,7 +262,6 @@ const Register = () => {
         </div>
       </div>
 
-      {/* Success Modal */}
       {success && (
         <div
           style={{

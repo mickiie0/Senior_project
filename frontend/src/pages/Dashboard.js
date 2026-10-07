@@ -23,8 +23,7 @@ import {
   parseEventDetections,
 } from '../components/dashboard/DashboardHelpers';
 
-// Alert stays active for this long after the most recent fire/smoke event
-const ALERT_ACTIVE_WINDOW_MS = 5 * 60 * 1000; // 5 นาที ปรับได้ตามต้องการ
+const ALERT_ACTIVE_WINDOW_MS = 10 * 60 * 1000;
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -34,9 +33,9 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [filterType, setFilterType] = useState('all'); // 'all' | 'fire' | 'smoke'
+  const [filterType, setFilterType] = useState('all');
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [sseStatus, setSseStatus] = useState('connecting'); // 'connecting' | 'connected' | 'disconnected'
+  const [sseStatus, setSseStatus] = useState('connecting');
 
   const isMountedRef = useRef(true);
   useEffect(() => {
@@ -115,7 +114,6 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, [fetchDashboardData]);
 
-  // Server-Sent Events (SSE) Real-time Stream
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -173,7 +171,6 @@ const Dashboard = () => {
     };
   }, []);
 
-  // Fast camera map by ID
   const camerasMap = useMemo(() => {
     const map = {};
     cameras.forEach((cam) => {
@@ -183,14 +180,12 @@ const Dashboard = () => {
     return map;
   }, [cameras]);
 
-  // Statistics computations
   const totalCameras = cameras.length;
   const activeCameras = cameras.filter(isCameraOnline).length;
   const maintenanceCameras = cameras.filter((c) => c.status === 'maintenance').length;
   const inactiveCameras = totalCameras - activeCameras - maintenanceCameras;
   const cameraOnlinePercent = totalCameras > 0 ? Math.round((activeCameras / totalCameras) * 100) : 0;
 
-  // Filter today's detections
   const todayDetections = useMemo(() => {
     const todayStr = new Date().toDateString();
     return recentDetections.filter((item) => {
@@ -199,7 +194,6 @@ const Dashboard = () => {
     });
   }, [recentDetections]);
 
-  // Multi-detection analytics across all events
   const { totalFireDetections, totalSmokeDetections, eventsWithFire, eventsWithSmoke, avgConfidence } =
     useMemo(() => {
       let fTotal = 0;
@@ -235,7 +229,6 @@ const Dashboard = () => {
       };
     }, [recentDetections]);
 
-  // Today fire & smoke detection counts
   const { fireTodayCount, smokeTodayCount } = useMemo(() => {
     let fCount = 0;
     let sCount = 0;
@@ -247,7 +240,6 @@ const Dashboard = () => {
     return { fireTodayCount: fCount, smokeTodayCount: sCount };
   }, [todayDetections]);
 
-  // Filtered detections based on tab
   const filteredDetections = useMemo(() => {
     if (filterType === 'all') return recentDetections;
     return recentDetections.filter((item) => {
@@ -258,7 +250,6 @@ const Dashboard = () => {
     });
   }, [recentDetections, filterType]);
 
-  // Latest fire-or-smoke event across all detections (not just "today")
   const latestAlertEvent = useMemo(() => {
     return (
       [...recentDetections]
@@ -270,14 +261,12 @@ const Dashboard = () => {
     );
   }, [recentDetections]);
 
-  // True only while the latest fire/smoke event is within the active window
   const hasActiveFireAlert = useMemo(() => {
     if (!latestAlertEvent?.created_at) return false;
     const elapsed = Date.now() - new Date(latestAlertEvent.created_at).getTime();
     return elapsed <= ALERT_ACTIVE_WINDOW_MS;
   }, [latestAlertEvent]);
 
-  // AI confidence scores are only shown to admin users
   const isAdmin = user?.role?.toLowerCase() === 'admin';
 
   return (

@@ -1,15 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { Flame, Camera, AlertTriangle, X, ExternalLink } from 'lucide-react';
 import styles from './EventHistoryStyles';
-import { getFullImageUrl, parseEventDetections } from './EventHistoryHelpers';
+import { getFullImageUrl, parseEventDetections, formatThaiDateTime } from './EventHistoryHelpers';
 
-/* ─── BoundingBoxOverlay ──────────────────────────────────────────────────── */
-// Renders coloured boxes on top of the image.
-// box_center_x/y, box_width, box_height are in **natural pixel** coordinates.
-// We scale them to the displayed image size using the img element's
-// naturalWidth / naturalHeight vs its rendered clientWidth / clientHeight.
 const BoundingBoxOverlay = ({ details, isAdmin }) => {
-  const [imgMeta, setImgMeta] = useState(null); // { scale }
+  const [imgMeta, setImgMeta] = useState(null);
   const [hasError, setHasError] = useState(false);
   const imgRef = React.useRef(null);
 
@@ -58,13 +53,11 @@ const BoundingBoxOverlay = ({ details, isAdmin }) => {
         onError={handleImgError}
       />
 
-      {/* Bounding boxes rendered as absolutely-positioned divs */}
       {imgMeta &&
         boxes.map((box, idx) => {
           const { scale } = imgMeta;
           const isF = (box.detection_type || '').toLowerCase().includes('fire');
 
-          // Convert center+size → top-left corner in displayed pixels (no offset needed)
           const left = (box.box_center_x - box.box_width / 2) * scale;
           const top = (box.box_center_y - box.box_height / 2) * scale;
           const width = box.box_width * scale;
@@ -87,7 +80,6 @@ const BoundingBoxOverlay = ({ details, isAdmin }) => {
                 boxSizing: 'border-box',
               }}
             >
-              {/* Label chip at top-left of the box */}
               <div
                 style={{
                   position: 'absolute',
@@ -112,7 +104,6 @@ const BoundingBoxOverlay = ({ details, isAdmin }) => {
   );
 };
 
-/* ─── EventDetailModal ────────────────────────────────────────────────────── */
 const EventDetailModal = ({ selectedEvent, camerasMap, onClose, isAdmin }) => {
   if (!selectedEvent) return null;
 
@@ -120,7 +111,6 @@ const EventDetailModal = ({ selectedEvent, camerasMap, onClose, isAdmin }) => {
   const fullImgUrl = getFullImageUrl(selectedEvent.image_url);
   const camInfo = camerasMap[selectedEvent.camera_id];
 
-  // Pack the URL + box list into a single prop so BoundingBoxOverlay is self-contained
   const overlayDetails = {
     __imgUrl: fullImgUrl,
     __boxes: selectedParsed.details || [],
@@ -129,7 +119,6 @@ const EventDetailModal = ({ selectedEvent, camerasMap, onClose, isAdmin }) => {
   return (
     <div style={styles.modalBackdrop} onClick={onClose}>
       <div style={styles.modalContainer} onClick={(e) => e.stopPropagation()}>
-        {/* Modal Header */}
         <div style={styles.modalHeader}>
           <div style={styles.modalHeaderTitleRow}>
             <Flame size={20} color="#dc2626" />
@@ -137,9 +126,7 @@ const EventDetailModal = ({ selectedEvent, camerasMap, onClose, isAdmin }) => {
               <h3 style={styles.modalTitle}>รายละเอียดเหตุการณ์ {selectedEvent.event_id}</h3>
               <div style={styles.modalSubtitle}>
                 บันทึกเมื่อ:{' '}
-                {selectedEvent.created_at
-                  ? new Date(selectedEvent.created_at).toLocaleString('th-TH')
-                  : '-'}
+                {formatThaiDateTime(selectedEvent.created_at)}
               </div>
             </div>
           </div>
@@ -148,9 +135,7 @@ const EventDetailModal = ({ selectedEvent, camerasMap, onClose, isAdmin }) => {
           </button>
         </div>
 
-        {/* Modal Body */}
         <div style={styles.modalBody}>
-          {/* Left Column: Snapshot Image + Bounding Boxes */}
           <div style={styles.modalLeftCol}>
             <div style={styles.modalImageContainer}>
               {fullImgUrl ? (
@@ -166,9 +151,7 @@ const EventDetailModal = ({ selectedEvent, camerasMap, onClose, isAdmin }) => {
             </div>
           </div>
 
-          {/* Right Column: Details & Bounding Boxes List */}
           <div style={styles.modalRightCol}>
-            {/* Details Grid */}
             <div style={styles.modalDetailsGrid}>
               <div
                 style={{
@@ -239,7 +222,6 @@ const EventDetailModal = ({ selectedEvent, camerasMap, onClose, isAdmin }) => {
               </div>
             </div>
 
-            {/* Bounding Box Detail List (แสดงเฉพาะ Admin) */}
             {isAdmin && selectedParsed.details && selectedParsed.details.length > 0 && (
               <div style={styles.bboxSection}>
                 <span style={styles.bboxSectionTitle}>
@@ -287,7 +269,6 @@ const EventDetailModal = ({ selectedEvent, camerasMap, onClose, isAdmin }) => {
           </div>
         </div>
 
-        {/* Modal Footer */}
         <div style={styles.modalFooter}>
           {fullImgUrl ? (
             <a href={fullImgUrl} target="_blank" rel="noopener noreferrer" style={styles.openTabLink}>

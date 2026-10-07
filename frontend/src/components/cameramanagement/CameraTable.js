@@ -1,10 +1,83 @@
-import React from 'react';
-import { RefreshCw, Camera, Wifi, MapPin, Edit2, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { RefreshCw, Camera, Wifi, MapPin, Edit2, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './CameraManagementStyles';
 import { CAMERA_STATUS } from './CameraManagementHelpers';
 import StatusBadge from './StatusBadge';
 
+const ITEMS_PER_PAGE = 10;
+
+const PaginationFooter = ({ filteredCount, totalCount, currentPage, totalPages, onPageChange }) => (
+  <div style={styles.paginationFooter}>
+    <div style={styles.paginationInfo}>
+      แสดง {filteredCount === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} –{' '}
+      {Math.min(currentPage * ITEMS_PER_PAGE, filteredCount)} จากทั้งหมด {filteredCount} กล้อง
+      {filteredCount !== totalCount && ` (กรองจาก ${totalCount} กล้อง)`}
+    </div>
+
+    <div style={styles.paginationControls}>
+      <button
+        onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
+        disabled={currentPage === 1}
+        style={{
+          ...styles.pageBtn,
+          opacity: currentPage === 1 ? 0.4 : 1,
+          cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+        }}
+        title="หน้าก่อนหน้า"
+      >
+        <ChevronLeft size={16} />
+      </button>
+
+      {Array.from({ length: totalPages }, (_, i) => i + 1)
+        .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+        .map((p, idx, arr) => {
+          const prevP = arr[idx - 1];
+          const showEllipsis = prevP && p - prevP > 1;
+          return (
+            <React.Fragment key={p}>
+              {showEllipsis && <span style={styles.pageEllipsis}>...</span>}
+              <button
+                onClick={() => onPageChange(p)}
+                style={{
+                  ...styles.pageNumBtn,
+                  ...(currentPage === p ? styles.pageNumBtnActive : {}),
+                }}
+              >
+                {p}
+              </button>
+            </React.Fragment>
+          );
+        })}
+
+      <button
+        onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
+        disabled={currentPage === totalPages}
+        style={{
+          ...styles.pageBtn,
+          opacity: currentPage === totalPages ? 0.4 : 1,
+          cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+        }}
+        title="หน้าถัดไป"
+      >
+        <ChevronRight size={16} />
+      </button>
+    </div>
+  </div>
+);
+
 const CameraTable = ({ loading, cameras, filteredCameras, onEdit, onDelete }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredCameras]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredCameras.length / ITEMS_PER_PAGE));
+  const paginatedCameras = filteredCameras.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div style={styles.tableCard}>
       {loading ? (
@@ -31,17 +104,16 @@ const CameraTable = ({ loading, cameras, filteredCameras, onEdit, onDelete }) =>
           <table style={styles.table}>
             <thead>
               <tr style={styles.tableHeadRow}>
-                <th style={styles.th}>Camera ID</th>
-                <th style={styles.th}>IP Address</th>
-                <th style={styles.th}>ตำแหน่งที่ติดตั้ง (Location)</th>
-                <th style={styles.th}>สถานะ (Status)</th>
+                <th style={styles.th}>รหัสกล้อง</th>
+                <th style={styles.th}>ที่อยู่ไอพี</th>
+                <th style={styles.th}>ตำแหน่งที่ติดตั้ง</th>
+                <th style={styles.th}>สถานะ</th>
                 <th style={{ ...styles.th, textAlign: 'center' }}>การจัดการ</th>
               </tr>
             </thead>
             <tbody>
-              {filteredCameras.map((cam) => (
+              {paginatedCameras.map((cam) => (
                 <tr key={cam.camera_id} style={styles.tableRow} className="interactive-row">
-                  {/* Camera ID */}
                   <td style={styles.td}>
                     <div style={styles.camIdBadge}>
                       <Camera size={13} color="#2563eb" />
@@ -49,7 +121,6 @@ const CameraTable = ({ loading, cameras, filteredCameras, onEdit, onDelete }) =>
                     </div>
                   </td>
 
-                  {/* IP Address */}
                   <td style={styles.td}>
                     <div style={styles.ipBadge}>
                       <Wifi size={13} color={cam.status === CAMERA_STATUS.ACTIVE ? '#16a34a' : '#94a3b8'} />
@@ -57,7 +128,6 @@ const CameraTable = ({ loading, cameras, filteredCameras, onEdit, onDelete }) =>
                     </div>
                   </td>
 
-                  {/* Location & Sub Location */}
                   <td style={styles.td}>
                     <div style={styles.locationBlock}>
                       <div style={styles.locationMain}>
@@ -68,12 +138,10 @@ const CameraTable = ({ loading, cameras, filteredCameras, onEdit, onDelete }) =>
                     </div>
                   </td>
 
-                  {/* Status */}
                   <td style={styles.td}>
                     <StatusBadge status={cam.status} />
                   </td>
 
-                  {/* Actions */}
                   <td style={{ ...styles.td, textAlign: 'center' }}>
                     <div style={styles.actionButtonsRow}>
                       <button onClick={() => onEdit(cam)} style={styles.btnEdit} title="แก้ไขข้อมูลกล้อง">
@@ -97,12 +165,13 @@ const CameraTable = ({ loading, cameras, filteredCameras, onEdit, onDelete }) =>
         </div>
       )}
 
-      {/* Table Footer */}
-      <div style={styles.cardFooter}>
-        <span style={styles.cardFooterNote}>
-          แสดงผล <strong>{filteredCameras.length}</strong> จากทั้งหมด {cameras.length} กล้อง
-        </span>
-      </div>
+      <PaginationFooter
+        filteredCount={filteredCameras.length}
+        totalCount={cameras.length}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 };

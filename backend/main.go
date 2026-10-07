@@ -109,7 +109,7 @@ func main() {
 	}
 	frontendURL := viper.GetString("FRONTEND_URL")
 	if frontendURL == "" {
-		frontendURL = "http://localhost:3000"
+		frontendURL = "http://localhost:8081"
 	}
 	notifRepo := notification.NewRepository(DB)
 	discordService := notification.NewDiscordService(discordWebhookURL, frontendURL, notifRepo)

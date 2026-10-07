@@ -1,3 +1,10 @@
+import {
+  formatThaiDate,
+  formatThaiTime,
+  formatThaiDateTime,
+  formatThaiTimeAgo,
+} from '../../utils/thaiDate';
+
 export const API_BASE_URL = 'http://localhost:8080/api';
 export const BACKEND_BASE_URL = 'http://localhost:8080';
 export const ITEMS_PER_PAGE = 10;
@@ -13,26 +20,10 @@ export const getFullImageUrl = (url) => {
   return `${BACKEND_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
-export const formatTimeAgo = (dateString) => {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffSec = Math.floor((now - date) / 1000);
+export { formatThaiDate, formatThaiTime, formatThaiDateTime, formatThaiTimeAgo };
 
-  if (diffSec < 60) return 'เมื่อสักครู่';
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} นาทีที่แล้ว`;
-  const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours} ชั่วโมงที่แล้ว`;
-  return date.toLocaleDateString('th-TH', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
+export const formatTimeAgo = formatThaiTimeAgo;
 
-// Helper to parse all detection details from an event
 export const parseEventDetections = (event) => {
   if (!event) {
     return {
@@ -113,7 +104,6 @@ export const parseEventDetections = (event) => {
   };
 };
 
-// Builds and downloads a CSV export of the given events
 export const exportEventsToCSV = (filteredEvents, camerasMap) => {
   if (filteredEvents.length === 0) {
     alert('ไม่มีข้อมูลให้ส่งออก');
@@ -138,7 +128,7 @@ export const exportEventsToCSV = (filteredEvents, camerasMap) => {
     const typesStr = parsed.types.map((t) => `${t.label}(${t.count})`).join('; ');
     const fireConf = parsed.hasFire ? (parsed.maxFireConfidence * 100).toFixed(1) : '-';
     const smokeConf = parsed.hasSmoke ? (parsed.maxSmokeConfidence * 100).toFixed(1) : '-';
-    const dateStr = evt.created_at ? new Date(evt.created_at).toLocaleString('th-TH') : '-';
+    const dateStr = formatThaiDateTime(evt.created_at);
     const fullImg = getFullImageUrl(evt.image_url) || '';
 
     return [
@@ -154,7 +144,6 @@ export const exportEventsToCSV = (filteredEvents, camerasMap) => {
     ].join(',');
   });
 
-  // UTF-8 BOM for Excel Thai compatibility
   const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);

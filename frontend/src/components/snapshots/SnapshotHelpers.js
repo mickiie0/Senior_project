@@ -1,3 +1,10 @@
+import {
+  formatThaiDate,
+  formatThaiTime,
+  formatThaiDateTime,
+  formatThaiTimeAgo,
+} from '../../utils/thaiDate';
+
 export const API_BASE_URL = 'http://localhost:8080/api';
 export const STATIC_BASE_URL = 'http://localhost:8080';
 export const ITEMS_PER_PAGE = 20;
@@ -19,36 +26,11 @@ export const formatFileSize = (bytes) => {
   return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 };
 
-export const formatDateTime = (dateString) => {
-  if (!dateString) return '-';
-  const d = new Date(dateString);
-  if (isNaN(d.getTime())) return dateString;
+export { formatThaiDate, formatThaiTime, formatThaiDateTime, formatThaiTimeAgo };
 
-  return d.toLocaleString('th-TH', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-};
+export const formatDateTime = (dateString) => formatThaiDateTime(dateString, { includeSeconds: true });
 
-export const formatTimeAgo = (dateString) => {
-  if (!dateString) return '-';
-  const d = new Date(dateString);
-  const now = new Date();
-  const diffSec = Math.floor((now - d) / 1000);
-
-  if (diffSec < 60) return 'เมื่อสักครู่';
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} นาทีที่แล้ว`;
-  const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours} ชม.ที่แล้ว`;
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 30) return `${diffDays} วันที่แล้ว`;
-  return formatDateTime(dateString);
-};
+export const formatTimeAgo = formatThaiTimeAgo;
 
 export const getFullImageUrl = (path) => {
   if (!path) return '';
@@ -92,7 +74,6 @@ export const exportSnapshotsToCSV = (snapshots, camerasMap) => {
     ].join(',');
   });
 
-  // UTF-8 BOM for Microsoft Excel Thai compatibility
   const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flame, ShieldCheck, CheckCircle2, Eye } from 'lucide-react';
+import { Flame, ShieldCheck, Eye } from 'lucide-react';
 import styles from './DashboardStyles';
 import { formatTimeAgo } from './DashboardHelpers';
 
@@ -42,14 +42,10 @@ const StatusBanner = ({ hasActiveFireAlert, latestAlertEvent, camerasMap, onView
         <ShieldCheck size={22} color="#16a34a" />
       </div>
       <div style={{ flex: 1 }}>
-        <div style={styles.alertTitleSafe}>สถานะความปลอดภัยปกติ (Secure)</div>
+        <div style={styles.alertTitleSafe}>สถานะความปลอดภัยปกติ</div>
         <div style={styles.alertSubtitleSafe}>
           ทุกพื้นที่อยู่ภายใต้การเฝ้าระวัง ไม่พบสัญญาณไฟหรือควันในขณะนี้
         </div>
-      </div>
-      <div style={styles.safeBadgePill}>
-        <CheckCircle2 size={14} color="#16a34a" />
-        <span>All Systems Nominal</span>
       </div>
     </div>
   );

@@ -51,7 +51,6 @@ const CameraSummaryCards = ({
             key={key}
             onClick={() => {
               if (onSelectFilter) {
-                // If already selected, clicking again resets to 'all' (unless it's 'all')
                 onSelectFilter(key === selectedFilter && key !== 'all' ? 'all' : key);
               }
             }}

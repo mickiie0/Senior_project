@@ -1,12 +1,12 @@
 import React from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Download } from 'lucide-react';
 import styles from './SnapshotStyles';
 
-const SnapshotsHeader = ({ isRefreshing, onRefresh }) => {
+const SnapshotsHeader = ({ isRefreshing, onRefresh, onExportCSV }) => {
   return (
     <div style={styles.headerBar}>
       <div>
-        <h1 style={styles.headerTitle}>บันทึกภาพถ่ายเป็นระยะ (Camera Snapshots)</h1>
+        <h1 style={styles.headerTitle}>บันทึกภาพถ่ายเป็นระยะ</h1>
         <p style={styles.headerSubtitle}>
           ภาพถ่ายปกติทุก 10 นาทีเมื่อไม่พบเพลิงไหม้ (Negative Samples สำหรับ Retrain Model) ข้อมูลมีอายุจัดเก็บ 90 วัน
         </p>
@@ -22,6 +22,17 @@ const SnapshotsHeader = ({ isRefreshing, onRefresh }) => {
           <RefreshCw size={15} className={isRefreshing ? 'spin-icon' : ''} />
           <span>รีเฟรช</span>
         </button>
+
+        {onExportCSV && (
+          <button
+            onClick={onExportCSV}
+            style={styles.exportBtn}
+            title="ดาวน์โหลดข้อมูลเป็นไฟล์ Excel / CSV"
+          >
+            <Download size={15} />
+            <span>ดาวน์โหลด CSV</span>
+          </button>
+        )}
       </div>
     </div>
   );

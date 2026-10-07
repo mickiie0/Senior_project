@@ -7,7 +7,6 @@ const styles = {
     margin: '0 auto',
   },
 
-  // Header Bar
   headerBar: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -91,7 +90,6 @@ const styles = {
     transition: 'all 0.2s',
   },
 
-  // Alert Banners
   dangerAlertBanner: {
     display: 'flex',
     alignItems: 'center',
@@ -179,7 +177,6 @@ const styles = {
     color: '#166534',
   },
 
-  // 4 Stat Cards
   statsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
@@ -267,7 +264,6 @@ const styles = {
     borderRadius: '6px',
   },
 
-  // Main Split Grid
   splitGrid: {
     display: 'grid',
     gridTemplateColumns: 'minmax(0, 1.65fr) minmax(0, 1fr)',
@@ -275,7 +271,6 @@ const styles = {
     alignItems: 'start',
   },
 
-  // Left Column Card
   mainCard: {
     backgroundColor: '#ffffff',
     borderRadius: '14px',
@@ -357,7 +352,6 @@ const styles = {
     boxShadow: '0 1px 2px rgba(217, 119, 6, 0.2)',
   },
 
-  // Table
   tableScroll: {
     overflowX: 'auto',
   },
@@ -399,7 +393,6 @@ const styles = {
     marginTop: '2px',
   },
 
-  // Multi-type badges container
   typeBadgesContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -418,7 +411,6 @@ const styles = {
     whiteSpace: 'nowrap',
   },
 
-  // Confidence cells list
   confColumnList: {
     display: 'flex',
     flexDirection: 'column',
@@ -481,6 +473,16 @@ const styles = {
     fontSize: '12px',
     color: '#64748b',
   },
+  dateMain: {
+    fontWeight: '500',
+    color: '#1e293b',
+    fontSize: '13px',
+  },
+  timeSub: {
+    fontSize: '13px',
+    color: '#64748b',
+    marginTop: '2px',
+  },
   timeMain: {
     fontWeight: '500',
     color: '#1e293b',
@@ -501,7 +503,6 @@ const styles = {
     transition: 'all 0.15s',
   },
 
-  // Card Footer
   cardFooter: {
     padding: '14px 24px',
     backgroundColor: '#f8fafc',
@@ -524,7 +525,6 @@ const styles = {
     textDecoration: 'none',
   },
 
-  // Right Column
   rightColumn: {
     display: 'flex',
     flexDirection: 'column',
@@ -654,7 +654,6 @@ const styles = {
     border: '1px solid #e2e8f0',
   },
 
-  // Camera List
   cameraListScroll: {
     maxHeight: '340px',
     overflowY: 'auto',
@@ -708,7 +707,6 @@ const styles = {
     borderRadius: '9999px',
   },
 
-  // Empty & Loading states
   loadingArea: {
     padding: '50px 20px',
     display: 'flex',
@@ -751,7 +749,6 @@ const styles = {
     textAlign: 'center',
   },
 
-  // Modal Styles
   modalBackdrop: {
     position: 'fixed',
     top: 0,

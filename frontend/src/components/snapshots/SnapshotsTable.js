@@ -7,7 +7,7 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
-  FileSpreadsheet,
+  RotateCcw,
 } from 'lucide-react';
 import styles from './SnapshotStyles';
 import {
@@ -16,6 +16,69 @@ import {
   formatTimeAgo,
   getFullImageUrl,
 } from './SnapshotHelpers';
+
+const ITEMS_PER_PAGE = 10;
+
+const PaginationFooter = ({ totalItems, currentPage, totalPages, onPageChange }) => (
+  <div style={styles.paginationBar}>
+    <span style={styles.paginationInfo}>
+      แสดง {totalItems === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} –{' '}
+      {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} จากทั้งหมด {totalItems} รายการ
+    </span>
+
+    <div style={styles.paginationControls}>
+      <button
+        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+        disabled={currentPage === 1}
+        style={{
+          ...styles.pageBtn,
+          opacity: currentPage === 1 ? 0.4 : 1,
+          cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+        }}
+        title="หน้าก่อนหน้า"
+      >
+        <ChevronLeft size={16} />
+      </button>
+
+      {Array.from({ length: totalPages }, (_, i) => i + 1)
+        .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+        .map((p, idx, arr) => {
+          const prevP = arr[idx - 1];
+          const showEllipsis = prevP && p - prevP > 1;
+          const isActive = p === currentPage;
+          return (
+            <React.Fragment key={p}>
+              {showEllipsis && (
+                <span style={{ padding: '0 4px', color: '#94a3b8', fontSize: '13px' }}>...</span>
+              )}
+              <button
+                onClick={() => onPageChange(p)}
+                style={{
+                  ...styles.pageBtn,
+                  ...(isActive ? styles.pageBtnActive : {}),
+                }}
+              >
+                {p}
+              </button>
+            </React.Fragment>
+          );
+        })}
+
+      <button
+        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+        disabled={currentPage === totalPages}
+        style={{
+          ...styles.pageBtn,
+          opacity: currentPage === totalPages ? 0.4 : 1,
+          cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+        }}
+        title="หน้าถัดไป"
+      >
+        <ChevronRight size={16} />
+      </button>
+    </div>
+  </div>
+);
 
 const SnapshotsTable = ({
   loading,
@@ -27,44 +90,28 @@ const SnapshotsTable = ({
   onPageChange,
   onSelectSnapshot,
   onDeleteSnapshot,
-  onExportCSV,
   onResetFilters,
 }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {/* Action Bar Above Table: Download CSV on the Left! */}
-      <div style={styles.tableActionBar}>
-        <div>
-          <button
-            onClick={onExportCSV}
-            style={styles.csvExportBtn}
-            title="ดาวน์โหลดรายการภาพถ่ายเป็นไฟล์ CSV"
-          >
-            <FileSpreadsheet size={16} />
-            <span>ดาวน์โหลด CSV</span>
-          </button>
-        </div>
-
-        <div>
-          <span style={styles.resultsCountText}>
-            พบทั้งหมด <strong>{totalItems}</strong> รายการ
-          </span>
-          <span style={styles.resultsPaginationText}>
-            หน้า {currentPage} จาก {totalPages}
-          </span>
-        </div>
+      <div style={styles.resultsBar}>
+        <span style={styles.resultsText}>
+          พบทั้งหมด <strong>{totalItems}</strong> รายการ
+        </span>
+        <span style={styles.pageIndicator}>
+          หน้า {currentPage} จาก {totalPages}
+        </span>
       </div>
 
-      {/* Main Table Card */}
       <div style={styles.tableCard}>
         <div style={styles.tableScroll}>
           <table style={styles.table}>
             <thead>
               <tr style={styles.tableHeadRow}>
-                <th style={{ ...styles.th, width: '68px', textAlign: 'center' }}>ภาพ</th>
-                <th style={styles.th}>Snapshot ID</th>
-                <th style={styles.th}>วันที่และเวลาที่บันทึก</th>
-                <th style={styles.th}>กล้องและสถานที่</th>
+                <th style={{ ...styles.th, width: '68px', textAlign: 'center' }}>รูปภาพ</th>
+                <th style={styles.th}>รหัสสแนปชอต</th>
+                <th style={styles.th}>วันและเวลาที่บันทึก</th>
+                <th style={styles.th}>กล้องและตำแหน่ง</th>
                 <th style={styles.th}>ขนาดไฟล์</th>
                 <th style={{ ...styles.th, textAlign: 'center', width: '130px' }}>การจัดการ</th>
               </tr>
@@ -72,41 +119,37 @@ const SnapshotsTable = ({
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                  <td colSpan={6}>
+                    <div style={styles.loadingArea}>
                       <div className="spin-icon" style={{ display: 'inline-block' }}>
-                        <Camera size={24} color="#2563eb" />
+                        <Camera size={26} color="#2563eb" />
                       </div>
-                      <span>กำลังโหลดรายการภาพถ่าย Snapshot...</span>
+                      <span style={{ fontSize: '13px', color: '#64748b' }}>
+                        กำลังโหลดรายการภาพถ่าย Snapshot...
+                      </span>
                     </div>
                   </td>
                 </tr>
               ) : snapshots.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                      <Camera size={36} color="#cbd5e1" />
-                      <span style={{ fontWeight: '600', fontSize: '15px', color: '#334155' }}>
+                  <td colSpan={6}>
+                    <div style={styles.emptyArea}>
+                      <div style={styles.emptyIconCircle}>
+                        <Camera size={28} color="#94a3b8" />
+                      </div>
+                      <h4 style={styles.emptyTitle}>
                         ไม่พบข้อมูลภาพถ่าย Snapshot
-                      </span>
-                      <span style={{ fontSize: '13px', color: '#94a3b8' }}>
+                      </h4>
+                      <p style={styles.emptyDesc}>
                         ยังไม่มีการส่งภาพจากกล้อง หรือไม่ตรงกับเงื่อนไขตัวกรองที่คุณเลือก
-                      </span>
+                      </p>
                       {onResetFilters && (
                         <button
                           onClick={onResetFilters}
-                          style={{
-                            marginTop: '8px',
-                            padding: '6px 14px',
-                            backgroundColor: '#f1f5f9',
-                            border: '1px solid #e2e8f0',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            color: '#2563eb',
-                            cursor: 'pointer',
-                          }}
+                          style={styles.emptyResetBtn}
                         >
-                          ล้างตัวกรอง
+                          <RotateCcw size={13} />
+                          <span>ล้างตัวกรอง</span>
                         </button>
                       )}
                     </div>
@@ -135,7 +178,6 @@ const SnapshotsTable = ({
                       style={styles.tableRow}
                       className="interactive-row"
                     >
-                      {/* Column 1: Thumbnail */}
                       <td style={{ ...styles.td, textAlign: 'center' }}>
                         <div
                           style={styles.thumbWrapper}
@@ -166,12 +208,10 @@ const SnapshotsTable = ({
                         </div>
                       </td>
 
-                      {/* Column 2: Snapshot ID */}
                       <td style={styles.td}>
                         <span style={styles.idBadge}>{item.id}</span>
                       </td>
 
-                      {/* Column 3: Captured At */}
                       <td style={styles.td}>
                         <div style={styles.dateMainText}>
                           {formatDateTime(item.captured_at || item.created_at)}
@@ -181,7 +221,6 @@ const SnapshotsTable = ({
                         </div>
                       </td>
 
-                      {/* Column 4: Camera & Location */}
                       <td style={styles.td}>
                         <div style={styles.camBadge}>
                           <Camera size={13} color="#2563eb" />
@@ -195,14 +234,12 @@ const SnapshotsTable = ({
                         </div>
                       </td>
 
-                      {/* Column 5: File Size */}
                       <td style={styles.td}>
                         <span style={styles.fileSizeText}>
                           {formatFileSize(item.file_size)}
                         </span>
                       </td>
 
-                      {/* Column 6: Actions (Preview, Download, Delete) */}
                       <td style={{ ...styles.td, textAlign: 'center' }}>
                         <div style={{ ...styles.actionBtnGroup, justifyContent: 'center' }}>
                           <button
@@ -240,68 +277,13 @@ const SnapshotsTable = ({
           </table>
         </div>
 
-        {/* Pagination Footer */}
-        {totalPages > 1 && (
-          <div style={styles.paginationBar}>
-            <span style={styles.paginationInfo}>
-              แสดงหน้า {currentPage} จากทั้งหมด {totalPages} หน้า
-            </span>
-
-            <div style={styles.paginationControls}>
-              <button
-                onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                style={{
-                  ...styles.pageBtn,
-                  opacity: currentPage === 1 ? 0.4 : 1,
-                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                }}
-                title="หน้าก่อนหน้า"
-              >
-                <ChevronLeft size={16} />
-              </button>
-
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
-
-                const isActive = pageNum === currentPage;
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => onPageChange(pageNum)}
-                    style={{
-                      ...styles.pageBtn,
-                      ...(isActive ? styles.pageBtnActive : {}),
-                    }}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-
-              <button
-                onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                style={{
-                  ...styles.pageBtn,
-                  opacity: currentPage === totalPages ? 0.4 : 1,
-                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                }}
-                title="หน้าถัดไป"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
+        {totalItems > 0 && (
+          <PaginationFooter
+            totalItems={totalItems}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+          />
         )}
       </div>
     </div>

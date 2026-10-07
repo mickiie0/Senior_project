@@ -7,7 +7,6 @@ const styles = {
     margin: '0 auto',
   },
 
-  // Header Bar
   headerBar: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -62,7 +61,6 @@ const styles = {
     boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)',
   },
 
-  // 4 Metric Cards
   statsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
@@ -106,7 +104,6 @@ const styles = {
     marginTop: '4px',
   },
 
-  // Filter Toolbar Card
   filterCard: {
     backgroundColor: '#ffffff',
     borderRadius: '14px',
@@ -227,7 +224,6 @@ const styles = {
     boxSizing: 'border-box',
   },
 
-  // Results Bar
   resultsBar: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -244,7 +240,6 @@ const styles = {
     fontWeight: '500',
   },
 
-  // Main Table Card
   tableCard: {
     backgroundColor: '#ffffff',
     borderRadius: '14px',
@@ -281,7 +276,6 @@ const styles = {
     verticalAlign: 'middle',
   },
 
-  // Fixed Strict Thumbnail Size (52x52px)
   thumbWrapper: {
     width: '52px',
     height: '52px',
@@ -419,6 +413,16 @@ const styles = {
     fontSize: '12px',
     color: '#64748b',
   },
+  dateMain: {
+    fontWeight: '500',
+    color: '#1e293b',
+    fontSize: '13px',
+  },
+  timeSub: {
+    fontSize: '13px',
+    color: '#64748b',
+    marginTop: '2px',
+  },
   timeMain: {
     fontWeight: '500',
     color: '#1e293b',
@@ -439,7 +443,6 @@ const styles = {
     transition: 'all 0.15s',
   },
 
-  // Pagination Footer
   paginationFooter: {
     padding: '14px 20px',
     backgroundColor: '#f8fafc',
@@ -494,7 +497,6 @@ const styles = {
     fontSize: '13px',
   },
 
-  // Empty & Loading
   loadingArea: {
     padding: '60px 20px',
     display: 'flex',
@@ -547,7 +549,6 @@ const styles = {
     cursor: 'pointer',
   },
 
-  // Modal Styles (Strict locked 320px image height)
   modalBackdrop: {
     position: 'fixed',
     top: 0,

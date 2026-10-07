@@ -43,14 +43,24 @@ func (s *service) ProcessEvent(input CreateEventInput) (*DetectionEvent, error) 
 
 	var details []EventDetail
 	for _, d := range input.Detections {
-		details = append(details, EventDetail{
-			DetectionType: d.DetectionType,
-			Confidence:    d.Confidence,
-			BoxCenterX:    d.BoxCenterX,
-			BoxCenterY:    d.BoxCenterY,
-			BoxWidth:      d.BoxWidth,
-			BoxHeight:     d.BoxHeight,
-		})
+		lower := strings.ToLower(d.DetectionType)
+		isFire := strings.Contains(lower, "fire") && d.Confidence >= 0.60
+		isSmoke := strings.Contains(lower, "smoke") && d.Confidence >= 0.40
+
+		if isFire || isSmoke {
+			details = append(details, EventDetail{
+				DetectionType: d.DetectionType,
+				Confidence:    d.Confidence,
+				BoxCenterX:    d.BoxCenterX,
+				BoxCenterY:    d.BoxCenterY,
+				BoxWidth:      d.BoxWidth,
+				BoxHeight:     d.BoxHeight,
+			})
+		}
+	}
+
+	if len(details) == 0 {
+		return nil, nil
 	}
 
 	event := &DetectionEvent{
@@ -63,7 +73,7 @@ func (s *service) ProcessEvent(input CreateEventInput) (*DetectionEvent, error) 
 	}
 
 	if input.ImageBase64 != "" {
-		savedPath, err := saveBase64Image(input.ImageBase64, event.EventID, event.CreatedAt)
+		savedPath, err := saveBase64Image(input.ImageBase64, input.CameraID, event.CreatedAt)
 		if err == nil {
 			event.ImageURL = savedPath
 			_ = s.repo.UpdateImageURL(event.EventID, savedPath)
@@ -80,8 +90,8 @@ func (s *service) ProcessEvent(input CreateEventInput) (*DetectionEvent, error) 
 		var detectionsSummary []notification.DetectionInfo
 		for _, d := range details {
 			lower := strings.ToLower(d.DetectionType)
-			isFireAlert := strings.Contains(lower, "fire") && d.Confidence >= 0.65
-			isSmokeAlert := strings.Contains(lower, "smoke") && d.Confidence >= 0.30
+			isFireAlert := strings.Contains(lower, "fire") && d.Confidence >= 0.60
+			isSmokeAlert := strings.Contains(lower, "smoke") && d.Confidence >= 0.40
 
 			if isFireAlert || isSmokeAlert {
 				hasAlert = true
@@ -126,7 +136,7 @@ func (s *service) GetAllEvents() ([]DetectionEvent, error) {
 	return s.repo.GetAllEvents()
 }
 
-func saveBase64Image(base64Data string, eventID string, createdAt time.Time) (string, error) {
+func saveBase64Image(base64Data string, cameraID string, createdAt time.Time) (string, error) {
 	if idx := strings.Index(base64Data, ","); idx != -1 {
 		base64Data = base64Data[idx+1:]
 	}
@@ -142,14 +152,20 @@ func saveBase64Image(base64Data string, eventID string, createdAt time.Time) (st
 	}
 
 	localTime := createdAt.In(loc)
+	dateDir := localTime.Format("2006-01-02")
 	timeStr := localTime.Format("2006-01-02_15-04-05")
-	
-	filename := fmt.Sprintf("%s_%s.jpg", eventID, timeStr)
-	filePath := filepath.Join("./uploads", filename)
+
+	dirPath := filepath.Join("./uploads", "detectionshot", dateDir, cameraID)
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
+		return "", fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	filename := fmt.Sprintf("%s_%s.jpg", cameraID, timeStr)
+	filePath := filepath.Join(dirPath, filename)
 
 	if err := os.WriteFile(filePath, unbased, 0644); err != nil {
 		return "", err
 	}
 
-	return "/uploads/" + filename, nil
+	return fmt.Sprintf("/uploads/detectionshot/%s/%s/%s", dateDir, cameraID, filename), nil
 }

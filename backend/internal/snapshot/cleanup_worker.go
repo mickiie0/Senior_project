@@ -10,12 +10,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// StartCleanupWorker starts a background goroutine to periodically prune snapshots older than 90 days.
-// It STRICTLY affects only the camera_snapshots table and files within uploads/snapshot directory.
-// Detection events and their images are NEVER touched.
 func StartCleanupWorker(db *gorm.DB, interval time.Duration) {
 	go func() {
-		// Run initial check shortly after startup
 		time.Sleep(30 * time.Second)
 		runPruneCycle(db)
 
@@ -53,7 +49,6 @@ func runPruneCycle(db *gorm.DB) {
 
 		var idsToDelete []string
 		for _, snp := range oldSnapshots {
-			// CRITICAL SAFETY CHECK: Ensure file path strictly belongs to uploads/snapshot
 			cleanPath := filepath.ToSlash(snp.FilePath)
 			cleanPath = strings.TrimPrefix(cleanPath, "/")
 
@@ -62,7 +57,6 @@ func runPruneCycle(db *gorm.DB) {
 				continue
 			}
 
-			// Delete physical file from disk
 			if err := os.Remove(cleanPath); err != nil && !os.IsNotExist(err) {
 				log.Printf("[Snapshot Cleanup] Notice: Could not remove file %s: %v\n", cleanPath, err)
 			}
@@ -70,7 +64,6 @@ func runPruneCycle(db *gorm.DB) {
 			idsToDelete = append(idsToDelete, snp.ID)
 		}
 
-		// Delete database records
 		if len(idsToDelete) > 0 {
 			if err := db.Where("id IN ?", idsToDelete).Delete(&CameraSnapshot{}).Error; err != nil {
 				log.Printf("[Snapshot Cleanup] Error deleting snapshot records from DB: %v\n", err)

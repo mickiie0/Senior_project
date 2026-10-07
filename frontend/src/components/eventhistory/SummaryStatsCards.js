@@ -22,18 +22,18 @@ const SummaryStatsCards = ({
     },
     {
       key: 'fire',
-      title: 'พบไฟ (Fire)',
+      title: 'ไฟ (Fire)',
       count: fireCount,
-      sub: 'เหตุการณ์ที่มีสัญญาณไฟไหม้',
+      sub: 'เหตุการณ์ที่มีไฟไหม้',
       icon: Flame,
       color: '#dc2626',
       bgColor: '#fee2e2',
     },
     {
       key: 'smoke',
-      title: 'พบควัน (Smoke)',
+      title: 'ควัน (Smoke)',
       count: smokeCount,
-      sub: 'เหตุการณ์ที่มีสัญญาณกลุ่มควัน',
+      sub: 'เหตุการณ์ที่มีกลุ่มควัน',
       icon: AlertTriangle,
       color: '#d97706',
       bgColor: '#fef3c7',
@@ -59,7 +59,6 @@ const SummaryStatsCards = ({
             key={key}
             onClick={() => {
               if (onSelectFilter) {
-                // If already selected, clicking again resets to 'all' (unless it's 'all')
                 onSelectFilter(key === selectedFilter && key !== 'all' ? 'all' : key);
               }
             }}

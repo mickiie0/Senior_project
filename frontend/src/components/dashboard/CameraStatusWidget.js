@@ -47,18 +47,24 @@ const CameraListItem = ({ cam }) => {
   );
 };
 
-const CameraStatusWidget = ({ cameras, totalCameras }) => {
+const CameraStatusWidget = ({ cameras = [], totalCameras }) => {
+  const count = totalCameras !== undefined ? totalCameras : cameras.length;
+  const latestCameras = [...cameras]
+    .sort((a, b) => {
+      if (a.created_at && b.created_at) {
+        return new Date(b.created_at) - new Date(a.created_at);
+      }
+      return (b.camera_id || b.id || '').localeCompare(a.camera_id || a.id || '', undefined, { numeric: true });
+    })
+    .slice(0, 5);
+
   return (
     <div style={styles.sideCard} className="dash-card">
       <div style={styles.sideCardHeader}>
         <div style={styles.cardTitleWithIcon}>
           <Video size={17} color="#059669" />
-          <h3 style={styles.sideCardTitle}>สถานะกล้องในระบบ ({totalCameras})</h3>
+          <h3 style={styles.sideCardTitle}>สถานะกล้องในระบบ</h3>
         </div>
-        <Link to="/cameras" style={styles.smallManageLink}>
-          <span>จัดการกล้อง</span>
-          <ArrowUpRight size={13} />
-        </Link>
       </div>
 
       {cameras.length === 0 ? (
@@ -69,11 +75,22 @@ const CameraStatusWidget = ({ cameras, totalCameras }) => {
           </p>
         </div>
       ) : (
-        <div style={styles.cameraListScroll}>
-          {cameras.map((cam) => (
-            <CameraListItem key={cam.camera_id || cam.id} cam={cam} />
-          ))}
-        </div>
+        <>
+          <div style={styles.cameraListScroll}>
+            {latestCameras.map((cam) => (
+              <CameraListItem key={cam.camera_id || cam.id} cam={cam} />
+            ))}
+          </div>
+          <div style={{ ...styles.cardFooter, padding: '12px 20px' }}>
+            <span style={styles.cardFooterNote}>
+              แสดงกล้องล่าสุด {Math.min(5, cameras.length)} จากทั้งหมด {count} ตัว
+            </span>
+            <Link to="/cameras" style={styles.footerLink}>
+              <span>ดูกล้องทั้งหมด</span>
+              <ArrowUpRight size={13} />
+            </Link>
+          </div>
+        </>
       )}
     </div>
   );

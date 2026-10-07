@@ -7,7 +7,6 @@ const styles = {
     margin: '0 auto',
   },
 
-  // Header Bar
   headerBar: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -48,7 +47,6 @@ const styles = {
     transition: 'all 0.2s',
   },
 
-  // 4 KPI Summary Cards
   statsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
@@ -104,7 +102,6 @@ const styles = {
     marginTop: '6px',
   },
 
-  // Add Camera Form Card
   formCard: {
     backgroundColor: '#ffffff',
     borderRadius: '14px',
@@ -243,7 +240,6 @@ const styles = {
     alignItems: 'center',
   },
 
-  // Filter Toolbar
   filterCard: {
     backgroundColor: '#ffffff',
     borderRadius: '14px',
@@ -320,7 +316,6 @@ const styles = {
     cursor: 'pointer',
   },
 
-  // Table Card
   tableCard: {
     backgroundColor: '#ffffff',
     borderRadius: '14px',
@@ -442,7 +437,64 @@ const styles = {
     fontSize: '12px',
   },
 
-  // Loading & Empty States
+  paginationFooter: {
+    padding: '14px 20px',
+    backgroundColor: '#f8fafc',
+    borderTop: '1px solid #e2e8f0',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '12px',
+  },
+  paginationInfo: {
+    fontSize: '13px',
+    color: '#64748b',
+  },
+  paginationControls: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+  },
+  pageBtn: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '6px',
+    border: '1px solid #cbd5e1',
+    backgroundColor: '#ffffff',
+    color: '#475569',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+  },
+  pageNumBtn: {
+    minWidth: '32px',
+    height: '32px',
+    padding: '0 6px',
+    borderRadius: '6px',
+    border: '1px solid #e2e8f0',
+    backgroundColor: '#ffffff',
+    color: '#475569',
+    fontSize: '13px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pageNumBtnActive: {
+    backgroundColor: '#2563eb',
+    color: '#ffffff',
+    borderColor: '#2563eb',
+    fontWeight: '700',
+  },
+  pageEllipsis: {
+    padding: '0 4px',
+    color: '#94a3b8',
+    fontSize: '13px',
+  },
+
   loadingArea: {
     padding: '60px 20px',
     display: 'flex',
@@ -482,7 +534,6 @@ const styles = {
     lineHeight: '1.5',
   },
 
-  // Modal Styles
   modalBackdrop: {
     position: 'fixed',
     top: 0,

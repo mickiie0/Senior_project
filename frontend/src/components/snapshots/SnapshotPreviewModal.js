@@ -1,7 +1,18 @@
 import React from 'react';
-import { X, Download, Camera, MapPin, Calendar, HardDrive } from 'lucide-react';
+import {
+  X,
+  Download,
+  Camera,
+  ExternalLink,
+  Info,
+} from 'lucide-react';
 import styles from './SnapshotStyles';
-import { formatDateTime, formatFileSize, getFullImageUrl } from './SnapshotHelpers';
+import {
+  formatDateTime,
+  formatTimeAgo,
+  formatFileSize,
+  getFullImageUrl,
+} from './SnapshotHelpers';
 
 const SnapshotPreviewModal = ({ snapshot, camerasMap, onClose }) => {
   if (!snapshot) return null;
@@ -21,116 +32,138 @@ const SnapshotPreviewModal = ({ snapshot, camerasMap, onClose }) => {
   };
 
   return (
-    <div style={styles.modalOverlay} onClick={onClose}>
+    <div style={styles.modalBackdrop} onClick={onClose}>
       <div style={styles.modalContainer} onClick={(e) => e.stopPropagation()}>
-        {/* Modal Header */}
         <div style={styles.modalHeader}>
-          <div>
-            <h3 style={styles.modalTitle}>รายละเอียดภาพถ่าย Snapshot</h3>
-            <span style={{ fontSize: '12px', color: '#64748b', fontFamily: 'monospace' }}>
-              {snapshot.id}
-            </span>
+          <div style={styles.modalHeaderTitleRow}>
+            <Camera size={20} color="#2563eb" />
+            <div>
+              <h3 style={styles.modalTitle}>
+                รายละเอียดภาพถ่าย {snapshot.id}
+              </h3>
+              <div style={styles.modalSubtitle}>
+                บันทึกเมื่อ: {formatDateTime(snapshot.captured_at || snapshot.created_at)}
+              </div>
+            </div>
           </div>
           <button onClick={onClose} style={styles.modalCloseBtn} title="ปิดหน้าต่าง">
             <X size={18} />
           </button>
         </div>
 
-        {/* Modal Body */}
         <div style={styles.modalBody}>
-          {/* Large Image Preview */}
-          <div style={styles.modalImgWrapper}>
-            {fullImgUrl ? (
-              <img
-                src={fullImgUrl}
-                alt={snapshot.id}
-                style={styles.modalImg}
-              />
-            ) : (
-              <div style={{ color: '#94a3b8', fontSize: '14px' }}>ไม่มีรูปภาพ</div>
-            )}
+          <div style={styles.modalLeftCol}>
+            <div style={styles.modalImageContainer}>
+              {fullImgUrl ? (
+                <img
+                  src={fullImgUrl}
+                  alt={snapshot.id}
+                  style={styles.modalImage}
+                />
+              ) : (
+                <div style={styles.modalImageFallback}>
+                  <Camera size={40} color="#94a3b8" />
+                  <p style={{ marginTop: '8px', color: '#64748b', fontSize: '14px' }}>
+                    ไม่มีภาพ Snapshot บันทึกไว้สำหรับรายการนี้
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Metadata Grid */}
-          <div style={styles.modalInfoGrid}>
-            <div style={styles.modalInfoItem}>
-              <span style={styles.modalInfoLabel}>
-                <Camera size={12} style={{ display: 'inline', marginRight: '4px' }} />
-                รหัสกล้อง
-              </span>
-              <span style={styles.modalInfoValue}>{snapshot.camera_id}</span>
+          <div style={styles.modalRightCol}>
+            <div style={styles.modalDetailsGrid}>
+              <div style={styles.modalDetailCard}>
+                <span style={styles.modalDetailLabel}>กล้องวงจรปิด</span>
+                <div style={styles.modalDetailValueMono}>
+                  {snapshot.camera_id || '-'}
+                </div>
+                <div style={styles.modalDetailSub}>
+                  IP: {cam.ip_address || '-'}
+                </div>
+              </div>
+
+              <div style={styles.modalDetailCard}>
+                <span style={styles.modalDetailLabel}>ตำแหน่งที่ติดตั้ง</span>
+                <div style={styles.modalDetailValue}>
+                  {cam.location || 'ไม่ระบุอาคาร'}
+                </div>
+                <div style={styles.modalDetailSub}>
+                  {cam.sub_location || '-'}
+                </div>
+              </div>
+
+              <div style={styles.modalDetailCard}>
+                <span style={styles.modalDetailLabel}>วันและเวลาที่บันทึก</span>
+                <div style={styles.modalDetailValue}>
+                  {formatDateTime(snapshot.captured_at || snapshot.created_at)}
+                </div>
+                <div style={styles.modalDetailSub}>
+                  {formatTimeAgo(snapshot.captured_at || snapshot.created_at)}
+                </div>
+              </div>
+
+              <div style={styles.modalDetailCard}>
+                <span style={styles.modalDetailLabel}>ขนาดไฟล์</span>
+                <div style={styles.modalDetailValue}>
+                  {formatFileSize(snapshot.file_size)}
+                </div>
+                <div style={styles.modalDetailSub}>
+                  {Number(snapshot.file_size || 0).toLocaleString()} Bytes
+                </div>
+              </div>
             </div>
 
-            <div style={styles.modalInfoItem}>
-              <span style={styles.modalInfoLabel}>
-                <MapPin size={12} style={{ display: 'inline', marginRight: '4px' }} />
-                สถานที่ติดตั้ง
+            <div style={styles.bboxSection}>
+              <span style={styles.bboxSectionTitle}>
+                ข้อมูลการบันทึกภาพตัวอย่าง (Dataset Information)
               </span>
-              <span style={styles.modalInfoValue}>
-                {cam.location ? `${cam.location} (${cam.sub_location || '-'})` : '-'}
-              </span>
-            </div>
-
-            <div style={styles.modalInfoItem}>
-              <span style={styles.modalInfoLabel}>
-                <Calendar size={12} style={{ display: 'inline', marginRight: '4px' }} />
-                เวลาที่บันทึก
-              </span>
-              <span style={styles.modalInfoValue}>
-                {formatDateTime(snapshot.captured_at || snapshot.created_at)}
-              </span>
-            </div>
-
-            <div style={styles.modalInfoItem}>
-              <span style={styles.modalInfoLabel}>
-                <HardDrive size={12} style={{ display: 'inline', marginRight: '4px' }} />
-                ขนาดไฟล์
-              </span>
-              <span style={styles.modalInfoValue}>
-                {formatFileSize(snapshot.file_size)}
-              </span>
+              <div style={styles.snapshotNoticeCard}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                  <Info size={16} color="#2563eb" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <p style={{ margin: 0, fontSize: '12px', color: '#64748b', lineHeight: '1.6' }}>
+                    ภาพนี้จัดเก็บอัตโนมัติทุก 10 นาทีในขณะที่สถานการณ์ปกติ (Negative Sample) เพื่อใช้เป็นชุดข้อมูลสำหรับตรวจสอบมุมมองและ Retrain พัฒนาโมเดล AI ให้มีความแม่นยำยิ่งขึ้น
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Modal Footer */}
         <div style={styles.modalFooter}>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '9px 18px',
-              backgroundColor: '#f1f5f9',
-              color: '#475569',
-              border: '1px solid #cbd5e1',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-            }}
-          >
-            ปิด
-          </button>
+          {fullImgUrl ? (
+            <a
+              href={fullImgUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={styles.openTabLink}
+            >
+              <ExternalLink size={14} />
+              <span>เปิดภาพเต็มในแท็บใหม่</span>
+            </a>
+          ) : (
+            <div />
+          )}
 
-          <button
-            onClick={handleDownload}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '9px 18px',
-              backgroundColor: '#2563eb',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)',
-            }}
-          >
-            <Download size={15} />
-            <span>ดาวน์โหลดภาพต้นฉบับ</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {fullImgUrl && (
+              <button
+                onClick={handleDownload}
+                style={styles.modalDownloadBtn}
+                title="ดาวน์โหลดภาพต้นฉบับ"
+              >
+                <Download size={15} />
+                <span>ดาวน์โหลดภาพ</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              style={styles.modalDismissBtn}
+            >
+              ปิดหน้าต่าง
+            </button>
+          </div>
         </div>
       </div>
     </div>

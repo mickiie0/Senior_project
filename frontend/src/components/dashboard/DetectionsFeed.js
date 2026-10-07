@@ -11,7 +11,12 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import styles from './DashboardStyles';
-import { formatTimeAgo, parseEventDetections } from './DashboardHelpers';
+import {
+  formatTimeAgo,
+  formatThaiDate,
+  formatThaiTime,
+  parseEventDetections,
+} from './DashboardHelpers';
 
 const DetectionTypeBadges = ({ types }) => (
   <div style={styles.typeBadgesContainer}>
@@ -99,11 +104,11 @@ const DetectionRow = ({ item, index, camInfo, onViewEvent, isAdmin }) => {
       </td>
 
       <td style={styles.td}>
-        <div style={styles.timeMain}>
-          {item.created_at ? new Date(item.created_at).toLocaleTimeString() : '-'}
+        <div style={styles.dateMain}>
+          {formatThaiDate(item.created_at)}
         </div>
-        <div style={styles.subTextMuted}>
-          {item.created_at ? new Date(item.created_at).toLocaleDateString() : '-'}
+        <div style={styles.timeSub}>
+          {formatThaiTime(item.created_at)}
         </div>
       </td>
 
@@ -135,12 +140,11 @@ const DetectionsFeed = ({
 }) => {
   return (
     <div style={styles.mainCard} className="dash-card">
-      {/* Card Header & Filter Tabs */}
       <div style={styles.cardHeaderArea}>
         <div style={styles.cardHeaderLeft}>
           <div style={styles.cardTitleWithIcon}>
             <Flame size={18} color="#dc2626" />
-            <h3 style={styles.cardTitle}>เหตุการณ์ตรวจจับล่าสุด (Recent Detections)</h3>
+            <h3 style={styles.cardTitle}>เหตุการณ์ตรวจจับล่าสุด</h3>
           </div>
           <span style={styles.badgeLivePulse}>
             <span style={styles.liveDotSmall} className="live-dot-pulse" />
@@ -182,7 +186,6 @@ const DetectionsFeed = ({
         </div>
       </div>
 
-      {/* Content Table */}
       {loading ? (
         <div style={styles.loadingArea}>
           <RefreshCw size={24} className="spin-icon" color="#2563eb" />
@@ -207,16 +210,16 @@ const DetectionsFeed = ({
           <table style={styles.table}>
             <thead>
               <tr style={styles.tableHeadRow}>
-                <th style={styles.th}>Event ID</th>
+                <th style={styles.th}>รหัสเหตุการณ์</th>
                 <th style={styles.th}>ประเภทที่ตรวจพบ</th>
-                {isAdmin && <th style={styles.th}>ความมั่นใจ (AI)</th>}
-                <th style={styles.th}>กล้อง & ตำแหน่ง</th>
-                <th style={styles.th}>เวลาที่บันทึก</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>การกระทำ</th>
+                {isAdmin && <th style={styles.th}>ความมั่นใจ</th>}
+                <th style={styles.th}>กล้องและตำแหน่ง</th>
+                <th style={styles.th}>วันและเวลาที่บันทึก</th>
+                <th style={{ ...styles.th, textAlign: 'center' }}></th>
               </tr>
             </thead>
             <tbody>
-              {filteredDetections.slice(0, 6).map((item, index) => (
+              {filteredDetections.slice(0, 5).map((item, index) => (
                 <DetectionRow
                   key={item.event_id || index}
                   item={item}
@@ -231,10 +234,9 @@ const DetectionsFeed = ({
         </div>
       )}
 
-      {/* Card Footer Link */}
       <div style={styles.cardFooter}>
         <span style={styles.cardFooterNote}>
-          แสดงเหตุการณ์ล่าสุด {Math.min(6, filteredDetections.length)} จากทั้งหมด {filteredDetections.length} รายการ
+          แสดงเหตุการณ์ล่าสุด {Math.min(5, filteredDetections.length)} จากทั้งหมด {filteredDetections.length} รายการ
         </span>
         <Link to="/events" style={styles.footerLink}>
           <span>ดูประวัติเหตุการณ์ทั้งหมด</span>

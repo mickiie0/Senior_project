@@ -11,7 +11,7 @@ const DiscordHeroBanner = ({ inviteUrl, copied, onCopyLink }) => {
         <div style={styles.badgeRow}>
           <span style={styles.heroBadge}>
             <Radio size={13} className="sidebar-pulse-dot" color="#22c55e" />
-            <span>REAL-TIME DISCORD NOTIFICATIONS</span>
+            <span>DISCORD NOTIFICATIONS</span>
           </span>
         </div>
 
@@ -20,7 +20,7 @@ const DiscordHeroBanner = ({ inviteUrl, copied, onCopyLink }) => {
         </h1>
 
         <p style={styles.heroSubtitle}>
-          รับการแจ้งเตือนทันทีเมื่อระบบ AI ตรวจพบเปลวไฟหรือกลุ่มควันจากกล้องวงจรปิด CCTV
+          รับการแจ้งเตือนทันทีเมื่อระบบ AI ตรวจพบไฟหรือควันจากกล้องวงจรปิด CCTV 
           พร้อมดูภาพ Snapshot จากสถานที่เกิดเหตุผ่านแอปพลิเคชัน Discord บนสมาร์ทโฟนและคอมพิวเตอร์ของคุณตลอด 24 ชั่วโมง
         </p>
 

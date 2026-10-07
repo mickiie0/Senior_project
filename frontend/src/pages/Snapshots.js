@@ -27,14 +27,12 @@ const Snapshots = () => {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Filters State
   const [searchTerm, setSearchTerm] = useState('');
   const [cameraFilter, setCameraFilter] = useState('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Modal State
   const [selectedSnapshot, setSelectedSnapshot] = useState(null);
 
   const isMountedRef = useRef(true);
@@ -50,7 +48,6 @@ const Snapshots = () => {
     navigate('/');
   }, [navigate]);
 
-  // Fetch initial User & Cameras
   useEffect(() => {
     const fetchInitData = async () => {
       const token = localStorage.getItem('token');
@@ -82,7 +79,6 @@ const Snapshots = () => {
     fetchInitData();
   }, [navigate, handleSessionExpired]);
 
-  // Fetch Snapshots with Filters & Pagination from backend
   const fetchSnapshots = useCallback(
     async (isManual = false) => {
       const token = localStorage.getItem('token');
@@ -136,12 +132,10 @@ const Snapshots = () => {
     fetchSnapshots();
   }, [fetchSnapshots]);
 
-  // Reset pagination to page 1 on filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [cameraFilter, startDate, endDate]);
 
-  // Fast camera map
   const camerasMap = useMemo(() => {
     const map = {};
     cameras.forEach((c) => {
@@ -151,7 +145,6 @@ const Snapshots = () => {
     return map;
   }, [cameras]);
 
-  // Client-side search filtering (by ID or Location)
   const filteredSnapshots = useMemo(() => {
     if (!searchTerm.trim()) return snapshots;
     const term = searchTerm.toLowerCase();
@@ -168,7 +161,6 @@ const Snapshots = () => {
     });
   }, [snapshots, searchTerm, camerasMap]);
 
-  // Delete Snapshot
   const handleDeleteSnapshot = async (id) => {
     if (!window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบ Snapshot: ${id}?`)) {
       return;
@@ -182,7 +174,6 @@ const Snapshots = () => {
     }
   };
 
-  // Reset filters
   const handleResetFilters = () => {
     setSearchTerm('');
     setCameraFilter('all');
@@ -202,6 +193,7 @@ const Snapshots = () => {
         <SnapshotsHeader
           isRefreshing={isRefreshing}
           onRefresh={() => fetchSnapshots(true)}
+          onExportCSV={() => exportSnapshotsToCSV(filteredSnapshots, camerasMap)}
         />
 
         {!isAdmin && user ? (
@@ -228,7 +220,6 @@ const Snapshots = () => {
           </div>
         ) : (
           <>
-            {/* Filter Toolbar (No cards per user request!) */}
             <SnapshotFilterToolbar
               searchTerm={searchTerm}
               onSearchTermChange={setSearchTerm}
@@ -242,7 +233,6 @@ const Snapshots = () => {
               onResetFilters={handleResetFilters}
             />
 
-            {/* Snapshots Table with Download CSV Button on Top-Left */}
             <SnapshotsTable
               loading={loading}
               snapshots={filteredSnapshots}
@@ -253,11 +243,9 @@ const Snapshots = () => {
               onPageChange={setCurrentPage}
               onSelectSnapshot={setSelectedSnapshot}
               onDeleteSnapshot={handleDeleteSnapshot}
-              onExportCSV={() => exportSnapshotsToCSV(filteredSnapshots, camerasMap)}
               onResetFilters={handleResetFilters}
             />
 
-            {/* Modal Image Preview */}
             <SnapshotPreviewModal
               snapshot={selectedSnapshot}
               camerasMap={camerasMap}

@@ -49,14 +49,14 @@ func (r *repository) List(query SnapshotQuery) ([]CameraSnapshot, int64, error) 
 
 	if query.FromDate != "" {
 		if t, err := time.Parse("2006-01-02", query.FromDate); err == nil {
-			db = db.Where("captured_at >= ?", t)
+			db = db.Where("created_at >= ?", t)
 		}
 	}
 
 	if query.ToDate != "" {
 		if t, err := time.Parse("2006-01-02", query.ToDate); err == nil {
 			endOfDay := t.Add(24*time.Hour - time.Nanosecond)
-			db = db.Where("captured_at <= ?", endOfDay)
+			db = db.Where("created_at <= ?", endOfDay)
 		}
 	}
 
@@ -77,7 +77,7 @@ func (r *repository) List(query SnapshotQuery) ([]CameraSnapshot, int64, error) 
 	offset := (query.Page - 1) * query.Limit
 
 	var snapshots []CameraSnapshot
-	err := db.Order("captured_at DESC").
+	err := db.Order("created_at DESC").
 		Limit(query.Limit).
 		Offset(offset).
 		Find(&snapshots).Error
@@ -102,8 +102,8 @@ func (r *repository) GetStats() (*SnapshotStats, error) {
 	var oldest SnapshotStats
 	var oldestTime time.Time
 	err := r.db.Model(&CameraSnapshot{}).
-		Order("captured_at ASC").
-		Select("captured_at").
+		Order("created_at ASC").
+		Select("created_at").
 		Limit(1).
 		Scan(&oldestTime).Error
 

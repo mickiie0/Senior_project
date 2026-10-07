@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, X, RotateCcw } from 'lucide-react';
+import { Search, X, RotateCcw, Filter } from 'lucide-react';
 import styles from './CameraManagementStyles';
 import { CAMERA_STATUS } from './CameraManagementHelpers';
 
@@ -17,12 +17,25 @@ const CameraFilterToolbar = ({
 
   return (
     <div style={styles.filterCard}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Filter size={16} color="#2563eb" />
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>ตัวกรองและค้นหาข้อมูล</span>
+        </div>
+        {hasActiveFilters && (
+          <button onClick={onResetFilters} style={styles.resetFilterBtn}>
+            <RotateCcw size={13} />
+            <span>ล้างตัวกรอง</span>
+          </button>
+        )}
+      </div>
+
       <div style={styles.filterLeft}>
         <div style={styles.searchInputWrapper}>
           <Search size={15} color="#94a3b8" style={styles.searchIcon} />
           <input
             type="text"
-            placeholder="ค้นหาด้วยรหัสกล้อง, IP Address, สถานที่"
+            placeholder="ค้นหาด้วย รหัสกล้อง, ที่อยู่ไอพี, สถานที่"
             value={searchTerm}
             onChange={(e) => onSearchTermChange(e.target.value)}
             style={styles.searchInput}
@@ -42,17 +55,10 @@ const CameraFilterToolbar = ({
           className="cam-input"
         >
           <option value="all">สถานะทั้งหมด ({totalCount})</option>
-          <option value={CAMERA_STATUS.ACTIVE}>เฉพาะพร้อมใช้งาน ({activeCount})</option>
-          <option value={CAMERA_STATUS.INACTIVE}>เฉพาะปิดใช้งาน ({inactiveCount})</option>
+          <option value={CAMERA_STATUS.ACTIVE}>พร้อมใช้งาน (Active) ({activeCount})</option>
+          <option value={CAMERA_STATUS.INACTIVE}>ปิดใช้งาน (Inactive) ({inactiveCount})</option>
         </select>
       </div>
-
-      {hasActiveFilters && (
-        <button onClick={onResetFilters} style={styles.resetFilterBtn}>
-          <RotateCcw size={13} />
-          <span>ล้างตัวกรอง</span>
-        </button>
-      )}
     </div>
   );
 };

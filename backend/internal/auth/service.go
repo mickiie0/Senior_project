@@ -69,7 +69,6 @@ func (s *Service) ChangePassword(userID, currentPassword, newPassword string) er
 		return errors.New("ไม่พบบัญชีผู้ใช้งาน")
 	}
 
-	// Verify current password
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(currentPassword))
 	if err != nil {
 		return errors.New("รหัสผ่านปัจจุบันไม่ถูกต้อง")

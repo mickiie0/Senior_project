@@ -29,7 +29,7 @@ const EventHistoryHeader = ({ isRefreshing, onRefresh, onExportCSV }) => {
           title="ดาวน์โหลดข้อมูลเป็นไฟล์ Excel / CSV"
         >
           <Download size={15} />
-          <span>ส่งออก CSV</span>
+          <span>ดาวน์โหลด CSV</span>
         </button>
       </div>
     </div>

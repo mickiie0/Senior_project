@@ -39,6 +39,14 @@ func (h *Handler) ReceiveEvent(c *gin.Context) {
 		return
 	}
 
+	if event == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "ignored",
+			"message": "Detection below confidence threshold, event not recorded",
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status":   "success",
 		"message":  "Detection event recorded successfully",
@@ -72,7 +80,6 @@ func (h *Handler) StreamEvents(c *gin.Context) {
 	c.Writer.Header().Set("X-Accel-Buffering", "no")
 	c.Writer.Flush()
 
-	// Initial handshake event
 	connectedPayload := fmt.Sprintf("event: connected\ndata: {\"status\":\"connected\",\"time\":\"%s\"}\n\n", time.Now().Format(time.RFC3339))
 	if _, err := c.Writer.WriteString(connectedPayload); err != nil {
 		return
