@@ -11,7 +11,7 @@ import ChannelDirectory from '../components/discordcommunity/ChannelDirectory';
 import styles from '../components/discordcommunity/DiscordCommunityStyles';
 
 const API_URL = 'http://localhost:8080/api';
-const DEFAULT_DISCORD_INVITE = 'https://discord.gg/4nCbDqyZf';
+const DEFAULT_DISCORD_INVITE = 'https://discord.gg/xBCgxjAPgT';
 
 const DiscordCommunity = () => {
   const [inviteUrl, setInviteUrl] = useState(DEFAULT_DISCORD_INVITE);

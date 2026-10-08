@@ -7,7 +7,6 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
-  RotateCcw,
 } from 'lucide-react';
 import styles from './SnapshotStyles';
 import {
@@ -143,15 +142,6 @@ const SnapshotsTable = ({
                       <p style={styles.emptyDesc}>
                         ยังไม่มีการส่งภาพจากกล้อง หรือไม่ตรงกับเงื่อนไขตัวกรองที่คุณเลือก
                       </p>
-                      {onResetFilters && (
-                        <button
-                          onClick={onResetFilters}
-                          style={styles.emptyResetBtn}
-                        >
-                          <RotateCcw size={13} />
-                          <span>ล้างตัวกรอง</span>
-                        </button>
-                      )}
                     </div>
                   </td>
                 </tr>

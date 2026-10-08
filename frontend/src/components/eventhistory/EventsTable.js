@@ -2,7 +2,6 @@ import React from 'react';
 import {
   RefreshCw,
   CheckCircle2,
-  RotateCcw,
   Flame,
   Layers,
   AlertTriangle,
@@ -240,16 +239,12 @@ const EventsTable = ({
       ) : filteredEvents.length === 0 ? (
         <div style={styles.emptyArea}>
           <div style={styles.emptyIconCircle}>
-            <CheckCircle2 size={36} color="#16a34a" />
+            <CheckCircle2 size={36} color="#94a3b8" />
           </div>
-          <h3 style={styles.emptyTitle}>ไม่พบข้อมูลตามเงื่อนไขที่ค้นหา</h3>
+          <h3 style={styles.emptyTitle}>ไม่พบข้อมูลประวัติเหตุการณ์</h3>
           <p style={styles.emptyDesc}>
-            กรุณาปรับเปลี่ยนคำค้นหา หรือกดปุ่ม "ล้างตัวกรอง" เพื่อแสดงข้อมูลประวัติทั้งหมด
+            ยังไม่มีการส่งประวัติเหตุการณ์ หรือไม่ตรงกับเงื่อนไขตัวกรองที่คุณเลือก
           </p>
-          <button onClick={onResetFilters} style={styles.emptyResetBtn}>
-            <RotateCcw size={14} />
-            <span>ล้างตัวกรองทั้งหมด</span>
-          </button>
         </div>
       ) : (
         <div style={styles.tableScroll}>

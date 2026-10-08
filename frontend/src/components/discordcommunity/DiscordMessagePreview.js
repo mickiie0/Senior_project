@@ -8,7 +8,7 @@ const DiscordMessagePreview = () => {
       <div style={styles.sectionHeader}>
         <h2 style={styles.sectionTitle}>ตัวอย่างการแจ้งเตือนบน Discord</h2>
         <p style={styles.sectionSubtitle}>
-          รูปแบบการส่งข้อมูลเหตุการณ์อัตโนมัติจากระบบ AI สู่ห้องแชท Discord
+          รูปแบบการส่งข้อมูลเหตุการณ์อัตโนมัติจากระบบเข้าสู่ห้องแชท Discord
         </p>
       </div>
 

@@ -167,7 +167,7 @@ func main() {
 		api.GET("/community/discord", func(c *gin.Context) {
 			inviteURL := viper.GetString("DISCORD_INVITE_URL")
 			if inviteURL == "" {
-				inviteURL = "https://discord.gg/vKzVv8s4"
+				inviteURL = "https://discord.gg/xBCgxjAPgT"
 			}
 			c.JSON(http.StatusOK, gin.H{
 				"invite_url": inviteURL,

@@ -92,10 +92,10 @@ const CameraTable = ({ loading, cameras, filteredCameras, onEdit, onDelete }) =>
           <div style={styles.emptyIconCircle}>
             <Camera size={36} color="#94a3b8" />
           </div>
-          <h3 style={styles.emptyTitle}>ไม่พบข้อมูลกล้องตามเงื่อนไข</h3>
+          <h3 style={styles.emptyTitle}>ไม่พบข้อมูลกล้อง</h3>
           <p style={styles.emptyDesc}>
             {cameras.length === 0
-              ? 'ยังไม่มีกล้องที่ลงทะเบียนไว้ในระบบ สามารถเพิ่มกล้องใหม่ได้จากฟอร์มด้านบน'
+              ? 'ยังไม่มีกล้องที่ลงทะเบียนไว้ในระบบ สามารถเพิ่มกล้องใหม่ได้จากแบบฟอร์ม'
               : 'กรุณาลองปรับเปลี่ยนคำค้นหา หรือกดปุ่ม "ล้างตัวกรอง" เพื่อแสดงรายการกล้องทั้งหมด'}
           </p>
         </div>

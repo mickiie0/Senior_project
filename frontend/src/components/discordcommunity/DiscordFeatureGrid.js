@@ -8,7 +8,7 @@ const FEATURES = [
     bgColor: '#eff6ff',
     color: '#2563eb',
     title: 'แจ้งเตือน Real-Time ทันใจ',
-    desc: 'ระบบประมวลผล AI ส่งข้อมูลแจ้งเตือนผ่าน Discord Webhook ทันทีในเสี้ยววินาทีเมื่อเกิดเหตุเพลิงไหม้',
+    desc: 'ระบบประมวลผลส่งข้อมูลแจ้งเตือนผ่าน Discord Webhook ทันทีในเสี้ยววินาทีเมื่อเกิดเหตุเพลิงไหม้',
   },
   {
     icon: Camera,

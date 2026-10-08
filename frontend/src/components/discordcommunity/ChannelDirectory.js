@@ -4,16 +4,16 @@ import styles from './DiscordCommunityStyles';
 
 const CHANNELS = [
   {
-    key: 'alerts',
-    label: '# 🚨fire-alerts',
-    badgeStyleKey: 'channelBadgeRed',
-    desc: 'ห้องแจ้งเตือนหลัก ใช้สำหรับทั้งการตรวจพบไฟ 🔥 และควัน 💨 จากระบบ AI พร้อมภาพ Snapshot แบบอัตโนมัติ',
-  },
-  {
     key: 'announcements',
     label: '# 📢announcements',
     badgeStyleKey: 'channelBadgeBlue',
     desc: 'ประกาศ ข้อมูลการอัปเดตระบบ และการทดสอบระบบตรวจจับ',
+  },
+  {
+    key: 'alerts',
+    label: '# 🚨fire-alerts',
+    badgeStyleKey: 'channelBadgeRed',
+    desc: 'ห้องแจ้งเตือนหลัก ใช้สำหรับทั้งการตรวจพบไฟ 🔥 และควัน 💨 จากระบบตรวจจับพร้อมภาพ Snapshot แบบอัตโนมัติ',
   },
   {
     key: 'general',

@@ -46,6 +46,8 @@ services:
       DB_PASSWORD: password
       DB_NAME: fire_detection
       DATABASE_URL: postgres://admin:password@postgres:5432/fire_detection?sslmode=disable&TimeZone=Asia/Bangkok
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-https://discord.com/api/webhooks/1557647721907748904/jo3aZEBxp9f4IUU3AGhPRsp66E0ePcfqsMPVye5IhkswtsVZDa5h_lwBAAXLJuimwtQj}
+      DISCORD_INVITE_URL: ${DISCORD_INVITE_URL:-https://discord.gg/xBCgxjAPgT}
 
     volumes:
       - ./backend/uploads:/app/uploads
