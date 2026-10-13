@@ -23,14 +23,16 @@ const EventHistoryHeader = ({ isRefreshing, onRefresh, onExportCSV }) => {
           <span>รีเฟรช</span>
         </button>
 
-        <button
-          onClick={onExportCSV}
-          style={styles.exportBtn}
-          title="ดาวน์โหลดข้อมูลเป็นไฟล์ Excel / CSV"
-        >
-          <Download size={15} />
-          <span>ดาวน์โหลด CSV</span>
-        </button>
+        {onExportCSV && (
+          <button
+            onClick={onExportCSV}
+            style={styles.exportBtn}
+            title="ดาวน์โหลดข้อมูลเป็นไฟล์ Excel / CSV"
+          >
+            <Download size={15} />
+            <span>ดาวน์โหลด CSV</span>
+          </button>
+        )}
       </div>
     </div>
   );

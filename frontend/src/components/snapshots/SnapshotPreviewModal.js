@@ -14,7 +14,7 @@ import {
   getFullImageUrl,
 } from './SnapshotHelpers';
 
-const SnapshotPreviewModal = ({ snapshot, camerasMap, onClose }) => {
+const SnapshotPreviewModal = ({ snapshot, camerasMap, onClose, isAdmin }) => {
   if (!snapshot) return null;
 
   const cam = camerasMap[snapshot.camera_id] || {};
@@ -78,9 +78,11 @@ const SnapshotPreviewModal = ({ snapshot, camerasMap, onClose }) => {
                 <div style={styles.modalDetailValueMono}>
                   {snapshot.camera_id || '-'}
                 </div>
-                <div style={styles.modalDetailSub}>
-                  IP: {cam.ip_address || '-'}
-                </div>
+                {isAdmin && cam.ip_address && (
+                  <div style={styles.modalDetailSub}>
+                    IP: {cam.ip_address}
+                  </div>
+                )}
               </div>
 
               <div style={styles.modalDetailCard}>

@@ -212,7 +212,9 @@ const EventDetailModal = ({ selectedEvent, camerasMap, onClose, isAdmin }) => {
               <div style={styles.modalDetailCard}>
                 <span style={styles.modalDetailLabel}>กล้องวงจรปิด</span>
                 <div style={styles.modalDetailValueMono}>{selectedEvent.camera_id || '-'}</div>
-                <div style={styles.modalDetailSub}>IP: {camInfo?.ip_address || '-'}</div>
+                {isAdmin && camInfo?.ip_address && (
+                  <div style={styles.modalDetailSub}>IP: {camInfo.ip_address}</div>
+                )}
               </div>
 
               <div style={styles.modalDetailCard}>

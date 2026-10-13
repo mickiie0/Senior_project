@@ -57,6 +57,15 @@ func (h *Handler) GetAll(c *gin.Context) {
 		return
 	}
 
+	role, _ := c.Get("role")
+	isAdmin := role == "admin"
+
+	if !isAdmin {
+		for i := range cameras {
+			cameras[i].IPAddress = ""
+		}
+	}
+
 	c.JSON(http.StatusOK, cameras)
 }
 
@@ -66,6 +75,13 @@ func (h *Handler) GetByID(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Camera not found"})
 		return
+	}
+
+	role, _ := c.Get("role")
+	isAdmin := role == "admin"
+
+	if !isAdmin {
+		cam.IPAddress = ""
 	}
 
 	c.JSON(http.StatusOK, cam)

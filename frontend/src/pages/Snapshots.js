@@ -193,7 +193,7 @@ const Snapshots = () => {
         <SnapshotsHeader
           isRefreshing={isRefreshing}
           onRefresh={() => fetchSnapshots(true)}
-          onExportCSV={() => exportSnapshotsToCSV(filteredSnapshots, camerasMap)}
+          onExportCSV={isAdmin ? () => exportSnapshotsToCSV(filteredSnapshots, camerasMap) : null}
         />
 
         {!isAdmin && user ? (
@@ -250,6 +250,7 @@ const Snapshots = () => {
               snapshot={selectedSnapshot}
               camerasMap={camerasMap}
               onClose={() => setSelectedSnapshot(null)}
+              isAdmin={isAdmin}
             />
           </>
         )}

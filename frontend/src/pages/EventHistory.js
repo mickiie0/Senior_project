@@ -246,7 +246,7 @@ const EventHistory = () => {
         <EventHistoryHeader
           isRefreshing={isRefreshing}
           onRefresh={() => fetchData(true)}
-          onExportCSV={() => exportEventsToCSV(filteredEvents, camerasMap)}
+          onExportCSV={isAdmin ? () => exportEventsToCSV(filteredEvents, camerasMap) : null}
         />
 
         <SummaryStatsCards

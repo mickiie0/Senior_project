@@ -21,7 +21,7 @@ const CameraListItem = ({ cam }) => {
         <div>
           <div style={styles.camItemName}>
             <span>{cam.camera_id || cam.id}</span>
-            <span style={styles.camIpTag}>{cam.ip_address || 'IP ไม่ระบุ'}</span>
+            {cam.ip_address && <span style={styles.camIpTag}>{cam.ip_address}</span>}
           </div>
           <div style={styles.camItemLocation}>
             <MapPin size={11} color="#94a3b8" />
