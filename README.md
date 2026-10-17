@@ -1,4 +1,4 @@
-# 🔥 Fire and Smoke Detection System (ระบบตรวจจับไฟและควันอัจฉริยะ)
+# 🔥Real-Time Fire and Smoke Detection System from CCTV Cameras Using Deep Learning Technique
 
 > **Senior Project**: ระบบเฝ้าระวัง แจ้งเตือน และตรวจจับอัคคีภัย (ไฟและควัน) แบบ Real-time ผ่านกล้องวงจรปิด / Edge Camera พร้อมการแจ้งเตือนผ่าน Discord และ Dashboard สำหรับบริหารจัดการ
 
