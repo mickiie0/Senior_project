@@ -5,8 +5,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import EventHistory from './pages/EventHistory';
-import Statistics from './pages/Statistics';
 import CameraManagement from './pages/CameraManagement';
+import DiscordCommunity from './pages/DiscordCommunity';
+import Snapshots from './pages/Snapshots';
 
 const App = () => {
   return (
@@ -16,8 +17,9 @@ const App = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/events" element={<EventHistory />} />
-        <Route path="/statistics" element={<Statistics />} />
+        <Route path="/snapshots" element={<Snapshots />} />
         <Route path="/cameras" element={<CameraManagement />} />
+        <Route path="/discord" element={<DiscordCommunity />} />
       </Routes>
     </BrowserRouter>
   );

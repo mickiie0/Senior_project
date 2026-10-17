@@ -2,6 +2,11 @@ package main
 
 import (
 	"fire_detection_web_app/internal/auth"
+	"fire_detection_web_app/internal/camera"
+	"fire_detection_web_app/internal/detection"
+	"fire_detection_web_app/internal/notification"
+	"fire_detection_web_app/internal/snapshot"
+	"fire_detection_web_app/internal/sse"
 
 	"log"
 	"net/http"
@@ -41,6 +46,37 @@ func ConnectDB() {
 func main() {
 	ConnectDB()
 
+	if err := DB.AutoMigrate(&auth.User{}, &camera.Camera{}, &detection.DetectionEvent{}, &detection.EventDetail{}, &notification.NotificationLog{}, &snapshot.CameraSnapshot{}); err != nil {
+		log.Fatalf("Failed to auto migrate database tables: %v", err)
+	}
+
+	addFKSQL := `
+		DO $$
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1 FROM information_schema.table_constraints
+				WHERE constraint_name = 'fk_notif_event'
+				  AND table_name = 'notification_logs'
+			) THEN
+				ALTER TABLE notification_logs
+					ADD CONSTRAINT fk_notif_event
+					FOREIGN KEY (event_id)
+					REFERENCES detection_events(event_id)
+					ON UPDATE CASCADE ON DELETE RESTRICT;
+			END IF;
+		END $$;
+	`
+	if err := DB.Exec(addFKSQL).Error; err != nil {
+		log.Fatalf("Failed to add FK constraint fk_notif_event: %v", err)
+	}
+	log.Println("FK constraint fk_notif_event ensured on notification_logs.event_id")
+
+	log.Println("Starting Camera Ping Worker...")
+	camera.StartPingWorker(DB, 1*time.Minute)
+
+	log.Println("Starting Snapshot Retention Worker (90 days policy)...")
+	snapshot.StartCleanupWorker(DB, 24*time.Hour)
+
 	jwtSecret := viper.GetString("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatalf("JWT_SECRET is not set in environment or .env file")
@@ -50,23 +86,59 @@ func main() {
 
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
-	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
+	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-API-Key"}
 	r.Use(cors.New(config))
 
-	dbConn, err := DB.DB()
-	if err != nil {
-		log.Fatalf("Failed to get database connection: %v", err)
-	}
+	r.Static("/uploads", "./uploads")
 
-	repo := auth.NewRepository(dbConn)
+	// Auth Module
+	repo := auth.NewRepository(DB)
 	jwtService := auth.NewJWT(jwtSecret, 24*time.Hour)
 	service := auth.NewService(repo, jwtService)
 	handler := auth.NewHandler(service)
+
+	// Camera Module
+	camRepo := camera.NewRepository(DB)
+	camService := camera.NewService(camRepo)
+	camHandler := camera.NewHandler(camService)
+
+	// Notification & Discord Module
+	discordWebhookURL := viper.GetString("DISCORD_WEBHOOK_URL")
+	if discordWebhookURL == "" {
+		log.Fatalf("DISCORD_WEBHOOK_URL is not set in environment or .env file")
+	}
+	frontendURL := viper.GetString("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:8081"
+	}
+	notifRepo := notification.NewRepository(DB)
+	discordService := notification.NewDiscordService(discordWebhookURL, frontendURL, notifRepo)
+	notifHandler := notification.NewHandler(notifRepo)
+
+	// SSE Real-time Hub
+	sseHub := sse.NewHub()
+
+	// Detection Module
+	detectionRepo := detection.NewRepository(DB)
+	detectionService := detection.NewService(detectionRepo, sseHub, discordService)
+	detectionHandler := detection.NewHandler(detectionService, sseHub)
+
+	// Snapshot Module
+	snapshotRepo := snapshot.NewRepository(DB)
+	snapshotService := snapshot.NewService(snapshotRepo)
+	snapshotHandler := snapshot.NewHandler(snapshotService)
 
 	authGroup := r.Group("/auth")
 	{
 		authGroup.POST("/register", handler.Register)
 		authGroup.POST("/login", handler.Login)
+	}
+
+	cameraApi := r.Group("/api")
+	cameraApi.Use(auth.CameraMiddleware())
+	{
+		cameraApi.POST("/detections", detectionHandler.ReceiveEvent)
+		cameraApi.POST("/snapshots", snapshotHandler.UploadSnapshot)
 	}
 
 	api := r.Group("/api")
@@ -85,6 +157,39 @@ func main() {
 				"role":     role,
 			})
 		})
+		api.PATCH("/me/change-password", handler.ChangePassword)
+
+		api.GET("/detections", detectionHandler.GetAll)
+		api.GET("/events/stream", detectionHandler.StreamEvents)
+		api.GET("/cameras", camHandler.GetAll)
+		api.GET("/cameras/:id", camHandler.GetByID)
+		api.GET("/notifications/logs", notifHandler.GetLogs)
+		api.GET("/community/discord", func(c *gin.Context) {
+			inviteURL := viper.GetString("DISCORD_INVITE_URL")
+			if inviteURL == "" {
+				inviteURL = "https://discord.gg/xBCgxjAPgT"
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"invite_url": inviteURL,
+			})
+		})
+
+		adminSnapshots := api.Group("/snapshots")
+		adminSnapshots.Use(auth.RequireRole("admin"))
+		{
+			adminSnapshots.GET("", snapshotHandler.GetAll)
+			adminSnapshots.GET("/stats", snapshotHandler.GetStats)
+			adminSnapshots.DELETE("/:id", snapshotHandler.Delete)
+		}
+
+		adminCameras := api.Group("/cameras")
+		adminCameras.Use(auth.RequireRole("admin"))
+		{
+			adminCameras.POST("/test-ip", camHandler.TestConnection)
+			adminCameras.POST("", camHandler.Create)
+			adminCameras.PUT("/:id", camHandler.Update)
+			adminCameras.DELETE("/:id", camHandler.Delete)
+		}
 	}
 
 	r.GET("/health", healthCheck)

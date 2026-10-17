@@ -5,20 +5,24 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/spf13/viper"
 )
 
 func AuthMiddleware(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		header := c.GetHeader("Authorization")
+		tokenString := ""
+		if header := c.GetHeader("Authorization"); header != "" {
+			tokenString = strings.TrimSpace(strings.TrimPrefix(header, "Bearer "))
+		} else if queryToken := c.Query("token"); queryToken != "" {
+			tokenString = strings.TrimSpace(queryToken)
+		}
 
-		if header == "" {
+		if tokenString == "" {
 			c.AbortWithStatusJSON(401, gin.H{
 				"error": "missing token",
 			})
 			return
 		}
-
-		tokenString := strings.TrimSpace(strings.TrimPrefix(header, "Bearer "))
 
 		claims := &Claims{}
 		token, err := jwt.ParseWithClaims(
@@ -70,5 +74,34 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 		}
 
 		c.AbortWithStatusJSON(403, gin.H{"error": "forbidden: insufficient permissions"})
+	}
+}
+
+func CameraMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		expectedKey := viper.GetString("CAMERA_API_KEY")
+		if expectedKey == "" {
+			c.AbortWithStatusJSON(500, gin.H{
+				"error": "server configuration error: CAMERA_API_KEY is not set",
+			})
+			return
+		}
+
+		clientKey := c.GetHeader("X-API-Key")
+		if clientKey == "" {
+			c.AbortWithStatusJSON(401, gin.H{
+				"error": "missing X-API-Key header",
+			})
+			return
+		}
+
+		if clientKey != expectedKey {
+			c.AbortWithStatusJSON(401, gin.H{
+				"error": "invalid API key",
+			})
+			return
+		}
+
+		c.Next()
 	}
 }

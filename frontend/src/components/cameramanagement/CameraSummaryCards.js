@@ -1,0 +1,88 @@
+import React from 'react';
+import { Video, CheckCircle2, WifiOff } from 'lucide-react';
+import styles from './CameraManagementStyles';
+import { CAMERA_STATUS } from './CameraManagementHelpers';
+
+const CameraSummaryCards = ({
+  totalCount,
+  activeCount,
+  inactiveCount,
+  uptimePercent,
+  selectedFilter = 'all',
+  onSelectFilter,
+}) => {
+  const summaryCards = [
+    {
+      key: 'all',
+      title: 'กล้องทั้งหมดในระบบ',
+      count: totalCount,
+      sub: 'ลงทะเบียนในระบบทั้งหมด',
+      icon: Video,
+      color: '#2563eb',
+      bgColor: '#eff6ff',
+    },
+    {
+      key: CAMERA_STATUS.ACTIVE,
+      title: 'พร้อมใช้งาน (Active)',
+      count: activeCount,
+      sub: `ความพร้อมใช้งาน ${uptimePercent}%`,
+      icon: CheckCircle2,
+      color: '#16a34a',
+      bgColor: '#f0fdf4',
+    },
+    {
+      key: CAMERA_STATUS.INACTIVE,
+      title: 'ปิดใช้งาน (Inactive)',
+      count: inactiveCount,
+      sub: 'ออฟไลน์หรือถูกปิดการทำงาน',
+      icon: WifiOff,
+      color: '#dc2626',
+      bgColor: '#fee2e2',
+    },
+  ];
+
+  return (
+    <div style={styles.statsGrid}>
+      {summaryCards.map(({ key, title, count, sub, icon: Icon, color, bgColor }) => {
+        const isSelected = selectedFilter === key;
+
+        return (
+          <div
+            key={key}
+            onClick={() => {
+              if (onSelectFilter) {
+                onSelectFilter(key === selectedFilter && key !== 'all' ? 'all' : key);
+              }
+            }}
+            style={{
+              ...styles.statCard,
+              cursor: onSelectFilter ? 'pointer' : 'default',
+              border: isSelected ? `2px solid ${color}` : '1px solid #e2e8f0',
+              backgroundColor: isSelected ? bgColor : '#ffffff',
+              transform: isSelected ? 'translateY(-2px)' : 'none',
+              boxShadow: isSelected ? `0 4px 12px ${color}25` : undefined,
+              transition: 'all 0.2s ease',
+            }}
+            className="dash-card"
+            title={`คลิกเพื่อกรอง: ${title}`}
+          >
+            <div style={styles.statCardHeader}>
+              <span style={{ ...styles.statCardTitle, color: isSelected ? color : '#64748b', fontWeight: isSelected ? '700' : '600' }}>
+                {title}
+              </span>
+              <div style={{ ...styles.statIconBadge, backgroundColor: isSelected ? '#ffffff' : bgColor, color }}>
+                <Icon size={18} />
+              </div>
+            </div>
+            <div style={{ ...styles.statCardValue, color }}>
+              {count} <span style={styles.statCardUnit}>ตัว</span>
+            </div>
+            <div style={styles.statCardSubText}>{sub}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+export default CameraSummaryCards;
