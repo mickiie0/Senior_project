@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Fire & Smoke Detection",
+  "name": "Fire and Smoke Detection System",
   "icons": [
     {
       "src": "favicon.ico",
